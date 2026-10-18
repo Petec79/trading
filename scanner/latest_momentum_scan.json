@@ -1,0 +1,4512 @@
+{
+  "timestamp": "2026-10-18T21:01:30.776203+00:00",
+  "coins": [
+    {
+      "symbol": "ARIAUSDT",
+      "close": 0.05936,
+      "window_chg_pct": 36.87,
+      "staircase": {
+        "direction": null,
+        "rising_lows_count": 5,
+        "rising_highs_count": 4,
+        "falling_lows_count": 2,
+        "falling_highs_count": 2,
+        "total_lows": 8,
+        "total_highs": 7,
+        "is_staircase": false,
+        "is_grinding_up": false,
+        "is_grinding_down": false,
+        "recent_highs": [
+          [
+            138,
+            0.063
+          ],
+          [
+            135,
+            0.06397
+          ],
+          [
+            131,
+            0.06452
+          ],
+          [
+            129,
+            0.06147
+          ],
+          [
+            128,
+            0.06038
+          ],
+          [
+            125,
+            0.06178
+          ]
+        ],
+        "recent_lows": [
+          [
+            141,
+            0.05734
+          ],
+          [
+            139,
+            0.06063
+          ],
+          [
+            136,
+            0.06048
+          ],
+          [
+            134,
+            0.06113
+          ],
+          [
+            127,
+            0.05551
+          ],
+          [
+            125,
+            0.05614
+          ]
+        ]
+      },
+      "volume": {
+        "vol_ma": 23083100.25,
+        "vol_threshold": 25391410.28,
+        "vol_current": 20435603.33,
+        "above_threshold": false,
+        "regime": false,
+        "avg_vol_window": 17964521.8
+      },
+      "levels": {
+        "last_sh": 0.063,
+        "last_sl": 0.05734,
+        "prev_sh": 0.06397,
+        "prev_sl": 0.06063,
+        "sh_broken": false,
+        "sl_broken": false,
+        "near_sh": false,
+        "near_sl": false,
+        "dist_to_sl_pct": 0.03402964959568735,
+        "dist_to_sh_pct": 0.061320754716981084,
+        "order_type_long": "MARKET",
+        "order_type_short": "MARKET"
+      },
+      "quality": {
+        "score": 1,
+        "criteria": {
+          "c1_staircase": false,
+          "c2_volume": false,
+          "c3_structure": true
+        },
+        "signal": "NONE",
+        "action": "AVOID",
+        "target_advice": "not a momentum regime"
+      },
+      "highs": [
+        [
+          138,
+          0.063
+        ],
+        [
+          135,
+          0.06397
+        ],
+        [
+          131,
+          0.06452
+        ],
+        [
+          129,
+          0.06147
+        ],
+        [
+          128,
+          0.06038
+        ],
+        [
+          125,
+          0.06178
+        ]
+      ],
+      "lows": [
+        [
+          141,
+          0.05734
+        ],
+        [
+          139,
+          0.06063
+        ],
+        [
+          136,
+          0.06048
+        ],
+        [
+          134,
+          0.06113
+        ],
+        [
+          127,
+          0.05551
+        ],
+        [
+          125,
+          0.05614
+        ]
+      ]
+    },
+    {
+      "symbol": "GTCUSDT",
+      "close": 0.28352,
+      "window_chg_pct": 11.14,
+      "staircase": {
+        "direction": null,
+        "rising_lows_count": 8,
+        "rising_highs_count": 2,
+        "falling_lows_count": 0,
+        "falling_highs_count": 5,
+        "total_lows": 9,
+        "total_highs": 8,
+        "is_staircase": false,
+        "is_grinding_up": false,
+        "is_grinding_down": false,
+        "recent_highs": [
+          [
+            142,
+            0.28766
+          ],
+          [
+            141,
+            0.27987
+          ],
+          [
+            140,
+            0.27489
+          ],
+          [
+            139,
+            0.27336
+          ],
+          [
+            138,
+            0.26701
+          ],
+          [
+            137,
+            0.26516
+          ]
+        ],
+        "recent_lows": [
+          [
+            134,
+            0.2592
+          ],
+          [
+            131,
+            0.26038
+          ],
+          [
+            130,
+            0.26054
+          ],
+          [
+            129,
+            0.26365
+          ],
+          [
+            128,
+            0.26591
+          ],
+          [
+            125,
+            0.2668
+          ]
+        ]
+      },
+      "volume": {
+        "vol_ma": 2244239.56,
+        "vol_threshold": 2468663.52,
+        "vol_current": 4314925.1,
+        "above_threshold": true,
+        "regime": true,
+        "avg_vol_window": 3244355.8
+      },
+      "levels": {
+        "last_sh": 0.28766,
+        "last_sl": 0.2592,
+        "prev_sh": 0.27987,
+        "prev_sl": 0.26038,
+        "sh_broken": false,
+        "sl_broken": false,
+        "near_sh": false,
+        "near_sl": false,
+        "dist_to_sl_pct": 0.08577878103837475,
+        "dist_to_sh_pct": 0.014602144469526075,
+        "order_type_long": "MARKET",
+        "order_type_short": "LIMIT"
+      },
+      "quality": {
+        "score": 2,
+        "criteria": {
+          "c1_staircase": false,
+          "c2_volume": true,
+          "c3_structure": true
+        },
+        "signal": "NONE",
+        "action": "CAUTIOUS",
+        "target_advice": "conservative \u2014 1R target"
+      },
+      "highs": [
+        [
+          142,
+          0.28766
+        ],
+        [
+          141,
+          0.27987
+        ],
+        [
+          140,
+          0.27489
+        ],
+        [
+          139,
+          0.27336
+        ],
+        [
+          138,
+          0.26701
+        ],
+        [
+          137,
+          0.26516
+        ]
+      ],
+      "lows": [
+        [
+          134,
+          0.2592
+        ],
+        [
+          131,
+          0.26038
+        ],
+        [
+          130,
+          0.26054
+        ],
+        [
+          129,
+          0.26365
+        ],
+        [
+          128,
+          0.26591
+        ],
+        [
+          125,
+          0.2668
+        ]
+      ]
+    },
+    {
+      "symbol": "ELSAUSDT",
+      "close": 0.07128,
+      "window_chg_pct": 17.41,
+      "staircase": {
+        "direction": null,
+        "rising_lows_count": 4,
+        "rising_highs_count": 3,
+        "falling_lows_count": 2,
+        "falling_highs_count": 6,
+        "total_lows": 7,
+        "total_highs": 10,
+        "is_staircase": false,
+        "is_grinding_up": false,
+        "is_grinding_down": false,
+        "recent_highs": [
+          [
+            139,
+            0.07223
+          ],
+          [
+            136,
+            0.07232
+          ],
+          [
+            135,
+            0.07211
+          ],
+          [
+            134,
+            0.07172
+          ],
+          [
+            133,
+            0.07159
+          ],
+          [
+            130,
+            0.07212
+          ]
+        ],
+        "recent_lows": [
+          [
+            142,
+            0.0699
+          ],
+          [
+            140,
+            0.0706
+          ],
+          [
+            137,
+            0.07078
+          ],
+          [
+            130,
+            0.06943
+          ],
+          [
+            126,
+            0.06834
+          ],
+          [
+            123,
+            0.06902
+          ]
+        ]
+      },
+      "volume": {
+        "vol_ma": 3082475.95,
+        "vol_threshold": 3390723.55,
+        "vol_current": 2614625.0,
+        "above_threshold": false,
+        "regime": false,
+        "avg_vol_window": 2270154.2
+      },
+      "levels": {
+        "last_sh": 0.07223,
+        "last_sl": 0.0699,
+        "prev_sh": 0.07232,
+        "prev_sl": 0.0706,
+        "sh_broken": false,
+        "sl_broken": false,
+        "near_sh": false,
+        "near_sl": false,
+        "dist_to_sl_pct": 0.019360269360269255,
+        "dist_to_sh_pct": 0.013327721661055085,
+        "order_type_long": "LIMIT",
+        "order_type_short": "LIMIT"
+      },
+      "quality": {
+        "score": 1,
+        "criteria": {
+          "c1_staircase": false,
+          "c2_volume": false,
+          "c3_structure": true
+        },
+        "signal": "NONE",
+        "action": "AVOID",
+        "target_advice": "not a momentum regime"
+      },
+      "highs": [
+        [
+          139,
+          0.07223
+        ],
+        [
+          136,
+          0.07232
+        ],
+        [
+          135,
+          0.07211
+        ],
+        [
+          134,
+          0.07172
+        ],
+        [
+          133,
+          0.07159
+        ],
+        [
+          130,
+          0.07212
+        ]
+      ],
+      "lows": [
+        [
+          142,
+          0.0699
+        ],
+        [
+          140,
+          0.0706
+        ],
+        [
+          137,
+          0.07078
+        ],
+        [
+          130,
+          0.06943
+        ],
+        [
+          126,
+          0.06834
+        ],
+        [
+          123,
+          0.06902
+        ]
+      ]
+    },
+    {
+      "symbol": "BRUSDT",
+      "close": 0.5056,
+      "window_chg_pct": 23.23,
+      "staircase": {
+        "direction": null,
+        "rising_lows_count": 1,
+        "rising_highs_count": 2,
+        "falling_lows_count": 2,
+        "falling_highs_count": 8,
+        "total_lows": 4,
+        "total_highs": 11,
+        "is_staircase": false,
+        "is_grinding_up": false,
+        "is_grinding_down": false,
+        "recent_highs": [
+          [
+            142,
+            0.51059
+          ],
+          [
+            140,
+            0.49831
+          ],
+          [
+            138,
+            0.49417
+          ],
+          [
+            137,
+            0.49144
+          ],
+          [
+            134,
+            0.5
+          ],
+          [
+            132,
+            0.49776
+          ]
+        ],
+        "recent_lows": [
+          [
+            135,
+            0.46767
+          ],
+          [
+            130,
+            0.45318
+          ],
+          [
+            125,
+            0.45171
+          ],
+          [
+            123,
+            0.458
+          ]
+        ]
+      },
+      "volume": {
+        "vol_ma": 1262151.5,
+        "vol_threshold": 1388366.65,
+        "vol_current": 1530732.67,
+        "above_threshold": true,
+        "regime": true,
+        "avg_vol_window": 1298671.2
+      },
+      "levels": {
+        "last_sh": 0.51059,
+        "last_sl": 0.46767,
+        "prev_sh": 0.49831,
+        "prev_sl": 0.45318,
+        "sh_broken": false,
+        "sl_broken": false,
+        "near_sh": false,
+        "near_sl": false,
+        "dist_to_sl_pct": 0.0750197784810128,
+        "dist_to_sh_pct": 0.009869462025316333,
+        "order_type_long": "MARKET",
+        "order_type_short": "LIMIT"
+      },
+      "quality": {
+        "score": 2,
+        "criteria": {
+          "c1_staircase": false,
+          "c2_volume": true,
+          "c3_structure": true
+        },
+        "signal": "NONE",
+        "action": "CAUTIOUS",
+        "target_advice": "conservative \u2014 1R target"
+      },
+      "highs": [
+        [
+          142,
+          0.51059
+        ],
+        [
+          140,
+          0.49831
+        ],
+        [
+          138,
+          0.49417
+        ],
+        [
+          137,
+          0.49144
+        ],
+        [
+          134,
+          0.5
+        ],
+        [
+          132,
+          0.49776
+        ]
+      ],
+      "lows": [
+        [
+          135,
+          0.46767
+        ],
+        [
+          130,
+          0.45318
+        ],
+        [
+          125,
+          0.45171
+        ],
+        [
+          123,
+          0.458
+        ],
+        [
+          113,
+          0.43719
+        ],
+        [
+          101,
+          0.42158
+        ]
+      ]
+    },
+    {
+      "symbol": "SKDDUSDT",
+      "close": 12.811,
+      "window_chg_pct": 4.0,
+      "staircase": {
+        "direction": null,
+        "rising_lows_count": 5,
+        "rising_highs_count": 2,
+        "falling_lows_count": 1,
+        "falling_highs_count": 7,
+        "total_lows": 7,
+        "total_highs": 10,
+        "is_staircase": false,
+        "is_grinding_up": false,
+        "is_grinding_down": false,
+        "recent_highs": [
+          [
+            142,
+            12.815
+          ],
+          [
+            141,
+            12.799
+          ],
+          [
+            138,
+            12.798
+          ],
+          [
+            137,
+            12.788
+          ],
+          [
+            133,
+            12.862
+          ],
+          [
+            128,
+            12.92
+          ]
+        ],
+        "recent_lows": [
+          [
+            136,
+            12.715
+          ],
+          [
+            135,
+            12.734
+          ],
+          [
+            134,
+            12.752
+          ],
+          [
+            130,
+            12.786
+          ],
+          [
+            129,
+            12.795
+          ],
+          [
+            122,
+            12.742
+          ]
+        ]
+      },
+      "volume": {
+        "vol_ma": 2942.21,
+        "vol_threshold": 3236.43,
+        "vol_current": 947.09,
+        "above_threshold": false,
+        "regime": false,
+        "avg_vol_window": 1522.64
+      },
+      "levels": {
+        "last_sh": 12.815,
+        "last_sl": 12.715,
+        "prev_sh": 12.799,
+        "prev_sl": 12.734,
+        "sh_broken": false,
+        "sl_broken": false,
+        "near_sh": false,
+        "near_sl": false,
+        "dist_to_sl_pct": 0.007493560221684497,
+        "dist_to_sh_pct": 0.000312231675903486,
+        "order_type_long": "LIMIT",
+        "order_type_short": "LIMIT"
+      },
+      "quality": {
+        "score": 1,
+        "criteria": {
+          "c1_staircase": false,
+          "c2_volume": false,
+          "c3_structure": true
+        },
+        "signal": "NONE",
+        "action": "AVOID",
+        "target_advice": "not a momentum regime"
+      },
+      "highs": [
+        [
+          142,
+          12.815
+        ],
+        [
+          141,
+          12.799
+        ],
+        [
+          138,
+          12.798
+        ],
+        [
+          137,
+          12.788
+        ],
+        [
+          133,
+          12.862
+        ],
+        [
+          128,
+          12.92
+        ]
+      ],
+      "lows": [
+        [
+          136,
+          12.715
+        ],
+        [
+          135,
+          12.734
+        ],
+        [
+          134,
+          12.752
+        ],
+        [
+          130,
+          12.786
+        ],
+        [
+          129,
+          12.795
+        ],
+        [
+          122,
+          12.742
+        ]
+      ]
+    },
+    {
+      "symbol": "ERAUSDT",
+      "close": 0.06575,
+      "window_chg_pct": -9.35,
+      "staircase": {
+        "direction": null,
+        "rising_lows_count": 5,
+        "rising_highs_count": 2,
+        "falling_lows_count": 2,
+        "falling_highs_count": 5,
+        "total_lows": 8,
+        "total_highs": 8,
+        "is_staircase": false,
+        "is_grinding_up": false,
+        "is_grinding_down": false,
+        "recent_highs": [
+          [
+            142,
+            0.06546
+          ],
+          [
+            141,
+            0.0652
+          ],
+          [
+            137,
+            0.06561
+          ],
+          [
+            136,
+            0.06541
+          ],
+          [
+            134,
+            0.06495
+          ],
+          [
+            133,
+            0.0648
+          ]
+        ],
+        "recent_lows": [
+          [
+            139,
+            0.06434
+          ],
+          [
+            131,
+            0.06317
+          ],
+          [
+            130,
+            0.06342
+          ],
+          [
+            127,
+            0.06334
+          ],
+          [
+            126,
+            0.06377
+          ],
+          [
+            125,
+            0.06414
+          ]
+        ]
+      },
+      "volume": {
+        "vol_ma": 3930086.7,
+        "vol_threshold": 4323095.37,
+        "vol_current": 2920085.67,
+        "above_threshold": false,
+        "regime": false,
+        "avg_vol_window": 3422973.4
+      },
+      "levels": {
+        "last_sh": 0.06546,
+        "last_sl": 0.06434,
+        "prev_sh": 0.0652,
+        "prev_sl": 0.06317,
+        "sh_broken": true,
+        "sl_broken": false,
+        "near_sh": true,
+        "near_sl": false,
+        "dist_to_sl_pct": 0.021444866920152218,
+        "dist_to_sh_pct": -0.004410646387832678,
+        "order_type_long": "LIMIT",
+        "order_type_short": "LIMIT"
+      },
+      "quality": {
+        "score": 1,
+        "criteria": {
+          "c1_staircase": false,
+          "c2_volume": false,
+          "c3_structure": true
+        },
+        "signal": "NONE",
+        "action": "AVOID",
+        "target_advice": "not a momentum regime"
+      },
+      "highs": [
+        [
+          142,
+          0.06546
+        ],
+        [
+          141,
+          0.0652
+        ],
+        [
+          137,
+          0.06561
+        ],
+        [
+          136,
+          0.06541
+        ],
+        [
+          134,
+          0.06495
+        ],
+        [
+          133,
+          0.0648
+        ]
+      ],
+      "lows": [
+        [
+          139,
+          0.06434
+        ],
+        [
+          131,
+          0.06317
+        ],
+        [
+          130,
+          0.06342
+        ],
+        [
+          127,
+          0.06334
+        ],
+        [
+          126,
+          0.06377
+        ],
+        [
+          125,
+          0.06414
+        ]
+      ]
+    },
+    {
+      "symbol": "SOXSUSDT",
+      "close": 51.99,
+      "window_chg_pct": 4.21,
+      "staircase": {
+        "direction": null,
+        "rising_lows_count": 5,
+        "rising_highs_count": 2,
+        "falling_lows_count": 1,
+        "falling_highs_count": 7,
+        "total_lows": 7,
+        "total_highs": 10,
+        "is_staircase": false,
+        "is_grinding_up": false,
+        "is_grinding_down": false,
+        "recent_highs": [
+          [
+            142,
+            51.99
+          ],
+          [
+            140,
+            51.96
+          ],
+          [
+            138,
+            51.95
+          ],
+          [
+            137,
+            51.84
+          ],
+          [
+            133,
+            52.07
+          ],
+          [
+            128,
+            52.33
+          ]
+        ],
+        "recent_lows": [
+          [
+            136,
+            51.68
+          ],
+          [
+            135,
+            51.72
+          ],
+          [
+            134,
+            51.78
+          ],
+          [
+            131,
+            51.86
+          ],
+          [
+            128,
+            51.92
+          ],
+          [
+            122,
+            51.89
+          ]
+        ]
+      },
+      "volume": {
+        "vol_ma": 4508.12,
+        "vol_threshold": 4958.93,
+        "vol_current": 1940.98,
+        "above_threshold": false,
+        "regime": false,
+        "avg_vol_window": 2375.37
+      },
+      "levels": {
+        "last_sh": 51.99,
+        "last_sl": 51.68,
+        "prev_sh": 51.96,
+        "prev_sl": 51.72,
+        "sh_broken": false,
+        "sl_broken": false,
+        "near_sh": false,
+        "near_sl": false,
+        "dist_to_sl_pct": 0.005962685131756151,
+        "dist_to_sh_pct": 0.0,
+        "order_type_long": "LIMIT",
+        "order_type_short": "LIMIT"
+      },
+      "quality": {
+        "score": 1,
+        "criteria": {
+          "c1_staircase": false,
+          "c2_volume": false,
+          "c3_structure": true
+        },
+        "signal": "NONE",
+        "action": "AVOID",
+        "target_advice": "not a momentum regime"
+      },
+      "highs": [
+        [
+          142,
+          51.99
+        ],
+        [
+          140,
+          51.96
+        ],
+        [
+          138,
+          51.95
+        ],
+        [
+          137,
+          51.84
+        ],
+        [
+          133,
+          52.07
+        ],
+        [
+          128,
+          52.33
+        ]
+      ],
+      "lows": [
+        [
+          136,
+          51.68
+        ],
+        [
+          135,
+          51.72
+        ],
+        [
+          134,
+          51.78
+        ],
+        [
+          131,
+          51.86
+        ],
+        [
+          128,
+          51.92
+        ],
+        [
+          122,
+          51.89
+        ]
+      ]
+    },
+    {
+      "symbol": "SIRENUSDT",
+      "close": 0.03149,
+      "window_chg_pct": 5.85,
+      "staircase": {
+        "direction": null,
+        "rising_lows_count": 7,
+        "rising_highs_count": 1,
+        "falling_lows_count": 2,
+        "falling_highs_count": 4,
+        "total_lows": 10,
+        "total_highs": 6,
+        "is_staircase": false,
+        "is_grinding_up": false,
+        "is_grinding_down": false,
+        "recent_highs": [
+          [
+            142,
+            0.03208
+          ],
+          [
+            139,
+            0.03193
+          ],
+          [
+            138,
+            0.03178
+          ],
+          [
+            137,
+            0.03128
+          ],
+          [
+            129,
+            0.03228
+          ],
+          [
+            128,
+            0.03217
+          ]
+        ],
+        "recent_lows": [
+          [
+            142,
+            0.03114
+          ],
+          [
+            135,
+            0.03002
+          ],
+          [
+            134,
+            0.03023
+          ],
+          [
+            133,
+            0.03102
+          ],
+          [
+            132,
+            0.03136
+          ],
+          [
+            131,
+            0.03161
+          ]
+        ]
+      },
+      "volume": {
+        "vol_ma": 8292656.4,
+        "vol_threshold": 9121922.04,
+        "vol_current": 5641113.67,
+        "above_threshold": false,
+        "regime": true,
+        "avg_vol_window": 9145150.4
+      },
+      "levels": {
+        "last_sh": 0.03208,
+        "last_sl": 0.03114,
+        "prev_sh": 0.03193,
+        "prev_sl": 0.03002,
+        "sh_broken": false,
+        "sl_broken": false,
+        "near_sh": false,
+        "near_sl": false,
+        "dist_to_sl_pct": 0.011114639568116742,
+        "dist_to_sh_pct": 0.018736106700539865,
+        "order_type_long": "LIMIT",
+        "order_type_short": "LIMIT"
+      },
+      "quality": {
+        "score": 2,
+        "criteria": {
+          "c1_staircase": false,
+          "c2_volume": true,
+          "c3_structure": true
+        },
+        "signal": "NONE",
+        "action": "CAUTIOUS",
+        "target_advice": "conservative \u2014 1R target"
+      },
+      "highs": [
+        [
+          142,
+          0.03208
+        ],
+        [
+          139,
+          0.03193
+        ],
+        [
+          138,
+          0.03178
+        ],
+        [
+          137,
+          0.03128
+        ],
+        [
+          129,
+          0.03228
+        ],
+        [
+          128,
+          0.03217
+        ]
+      ],
+      "lows": [
+        [
+          142,
+          0.03114
+        ],
+        [
+          135,
+          0.03002
+        ],
+        [
+          134,
+          0.03023
+        ],
+        [
+          133,
+          0.03102
+        ],
+        [
+          132,
+          0.03136
+        ],
+        [
+          131,
+          0.03161
+        ]
+      ]
+    },
+    {
+      "symbol": "SOLVUSDT",
+      "close": 0.004474,
+      "window_chg_pct": 3.18,
+      "staircase": {
+        "direction": null,
+        "rising_lows_count": 5,
+        "rising_highs_count": 2,
+        "falling_lows_count": 1,
+        "falling_highs_count": 8,
+        "total_lows": 7,
+        "total_highs": 11,
+        "is_staircase": false,
+        "is_grinding_up": false,
+        "is_grinding_down": false,
+        "recent_highs": [
+          [
+            140,
+            0.004636
+          ],
+          [
+            139,
+            0.004604
+          ],
+          [
+            138,
+            0.00451
+          ],
+          [
+            137,
+            0.004508
+          ],
+          [
+            136,
+            0.004494
+          ],
+          [
+            135,
+            0.004445
+          ]
+        ],
+        "recent_lows": [
+          [
+            140,
+            0.004363
+          ],
+          [
+            126,
+            0.004286
+          ],
+          [
+            125,
+            0.004287
+          ],
+          [
+            124,
+            0.004314
+          ],
+          [
+            123,
+            0.004315
+          ],
+          [
+            121,
+            0.004337
+          ]
+        ]
+      },
+      "volume": {
+        "vol_ma": 16456081.6,
+        "vol_threshold": 18101689.76,
+        "vol_current": 48270595.33,
+        "above_threshold": true,
+        "regime": true,
+        "avg_vol_window": 38443163.2
+      },
+      "levels": {
+        "last_sh": 0.004636,
+        "last_sl": 0.004363,
+        "prev_sh": 0.004604,
+        "prev_sl": 0.004286,
+        "sh_broken": false,
+        "sl_broken": false,
+        "near_sh": false,
+        "near_sl": false,
+        "dist_to_sl_pct": 0.02481001341081806,
+        "dist_to_sh_pct": 0.03620920876173462,
+        "order_type_long": "LIMIT",
+        "order_type_short": "MARKET"
+      },
+      "quality": {
+        "score": 2,
+        "criteria": {
+          "c1_staircase": false,
+          "c2_volume": true,
+          "c3_structure": true
+        },
+        "signal": "NONE",
+        "action": "CAUTIOUS",
+        "target_advice": "conservative \u2014 1R target"
+      },
+      "highs": [
+        [
+          140,
+          0.004636
+        ],
+        [
+          139,
+          0.004604
+        ],
+        [
+          138,
+          0.00451
+        ],
+        [
+          137,
+          0.004508
+        ],
+        [
+          136,
+          0.004494
+        ],
+        [
+          135,
+          0.004445
+        ]
+      ],
+      "lows": [
+        [
+          140,
+          0.004363
+        ],
+        [
+          126,
+          0.004286
+        ],
+        [
+          125,
+          0.004287
+        ],
+        [
+          124,
+          0.004314
+        ],
+        [
+          123,
+          0.004315
+        ],
+        [
+          121,
+          0.004337
+        ]
+      ]
+    },
+    {
+      "symbol": "MAGMAUSDT",
+      "close": 0.26064,
+      "window_chg_pct": 4.19,
+      "staircase": {
+        "direction": null,
+        "rising_lows_count": 7,
+        "rising_highs_count": 3,
+        "falling_lows_count": 3,
+        "falling_highs_count": 4,
+        "total_lows": 11,
+        "total_highs": 8,
+        "is_staircase": false,
+        "is_grinding_up": false,
+        "is_grinding_down": false,
+        "recent_highs": [
+          [
+            140,
+            0.26298
+          ],
+          [
+            135,
+            0.26369
+          ],
+          [
+            131,
+            0.26499
+          ],
+          [
+            130,
+            0.264
+          ],
+          [
+            129,
+            0.26345
+          ],
+          [
+            128,
+            0.26333
+          ]
+        ],
+        "recent_lows": [
+          [
+            142,
+            0.26008
+          ],
+          [
+            141,
+            0.26011
+          ],
+          [
+            138,
+            0.25986
+          ],
+          [
+            137,
+            0.26138
+          ],
+          [
+            134,
+            0.26065
+          ],
+          [
+            133,
+            0.2617
+          ]
+        ]
+      },
+      "volume": {
+        "vol_ma": 255551.9,
+        "vol_threshold": 281107.09,
+        "vol_current": 132003.33,
+        "above_threshold": false,
+        "regime": false,
+        "avg_vol_window": 166479.2
+      },
+      "levels": {
+        "last_sh": 0.26298,
+        "last_sl": 0.26008,
+        "prev_sh": 0.26369,
+        "prev_sl": 0.26011,
+        "sh_broken": false,
+        "sl_broken": false,
+        "near_sh": false,
+        "near_sl": false,
+        "dist_to_sl_pct": 0.002148557397176201,
+        "dist_to_sh_pct": 0.008977900552486222,
+        "order_type_long": "LIMIT",
+        "order_type_short": "LIMIT"
+      },
+      "quality": {
+        "score": 1,
+        "criteria": {
+          "c1_staircase": false,
+          "c2_volume": false,
+          "c3_structure": true
+        },
+        "signal": "NONE",
+        "action": "AVOID",
+        "target_advice": "not a momentum regime"
+      },
+      "highs": [
+        [
+          140,
+          0.26298
+        ],
+        [
+          135,
+          0.26369
+        ],
+        [
+          131,
+          0.26499
+        ],
+        [
+          130,
+          0.264
+        ],
+        [
+          129,
+          0.26345
+        ],
+        [
+          128,
+          0.26333
+        ]
+      ],
+      "lows": [
+        [
+          142,
+          0.26008
+        ],
+        [
+          141,
+          0.26011
+        ],
+        [
+          138,
+          0.25986
+        ],
+        [
+          137,
+          0.26138
+        ],
+        [
+          134,
+          0.26065
+        ],
+        [
+          133,
+          0.2617
+        ]
+      ]
+    },
+    {
+      "symbol": "UVXYUSDT",
+      "close": 19.47,
+      "window_chg_pct": 4.56,
+      "staircase": {
+        "direction": null,
+        "rising_lows_count": 4,
+        "rising_highs_count": 2,
+        "falling_lows_count": 1,
+        "falling_highs_count": 2,
+        "total_lows": 6,
+        "total_highs": 5,
+        "is_staircase": false,
+        "is_grinding_up": false,
+        "is_grinding_down": false,
+        "recent_highs": [
+          [
+            141,
+            19.5
+          ],
+          [
+            140,
+            19.49
+          ],
+          [
+            135,
+            19.59
+          ],
+          [
+            134,
+            19.36
+          ],
+          [
+            127,
+            19.51
+          ]
+        ],
+        "recent_lows": [
+          [
+            132,
+            19.26
+          ],
+          [
+            131,
+            19.27
+          ],
+          [
+            126,
+            19.11
+          ],
+          [
+            125,
+            19.21
+          ],
+          [
+            124,
+            19.22
+          ],
+          [
+            120,
+            19.23
+          ]
+        ]
+      },
+      "volume": {
+        "vol_ma": 1723.23,
+        "vol_threshold": 1895.55,
+        "vol_current": 405.83,
+        "above_threshold": false,
+        "regime": false,
+        "avg_vol_window": 378.2
+      },
+      "levels": {
+        "last_sh": 19.5,
+        "last_sl": 19.26,
+        "prev_sh": 19.49,
+        "prev_sl": 19.27,
+        "sh_broken": false,
+        "sl_broken": false,
+        "near_sh": false,
+        "near_sl": false,
+        "dist_to_sl_pct": 0.01078582434514624,
+        "dist_to_sh_pct": 0.001540832049306684,
+        "order_type_long": "LIMIT",
+        "order_type_short": "LIMIT"
+      },
+      "quality": {
+        "score": 1,
+        "criteria": {
+          "c1_staircase": false,
+          "c2_volume": false,
+          "c3_structure": true
+        },
+        "signal": "NONE",
+        "action": "AVOID",
+        "target_advice": "not a momentum regime"
+      },
+      "highs": [
+        [
+          141,
+          19.5
+        ],
+        [
+          140,
+          19.49
+        ],
+        [
+          135,
+          19.59
+        ],
+        [
+          134,
+          19.36
+        ],
+        [
+          127,
+          19.51
+        ],
+        [
+          112,
+          19.29
+        ]
+      ],
+      "lows": [
+        [
+          132,
+          19.26
+        ],
+        [
+          131,
+          19.27
+        ],
+        [
+          126,
+          19.11
+        ],
+        [
+          125,
+          19.21
+        ],
+        [
+          124,
+          19.22
+        ],
+        [
+          120,
+          19.23
+        ]
+      ]
+    },
+    {
+      "symbol": "ARCUSDT",
+      "close": 0.04091,
+      "window_chg_pct": -0.9,
+      "staircase": {
+        "direction": null,
+        "rising_lows_count": 5,
+        "rising_highs_count": 3,
+        "falling_lows_count": 2,
+        "falling_highs_count": 6,
+        "total_lows": 8,
+        "total_highs": 10,
+        "is_staircase": false,
+        "is_grinding_up": false,
+        "is_grinding_down": false,
+        "recent_highs": [
+          [
+            142,
+            0.04082
+          ],
+          [
+            141,
+            0.04077
+          ],
+          [
+            140,
+            0.04059
+          ],
+          [
+            137,
+            0.04093
+          ],
+          [
+            136,
+            0.04084
+          ],
+          [
+            131,
+            0.04098
+          ]
+        ],
+        "recent_lows": [
+          [
+            139,
+            0.04014
+          ],
+          [
+            138,
+            0.04015
+          ],
+          [
+            137,
+            0.04036
+          ],
+          [
+            133,
+            0.04031
+          ],
+          [
+            132,
+            0.04036
+          ],
+          [
+            126,
+            0.03982
+          ]
+        ]
+      },
+      "volume": {
+        "vol_ma": 743863.1,
+        "vol_threshold": 818249.41,
+        "vol_current": 462516.67,
+        "above_threshold": false,
+        "regime": false,
+        "avg_vol_window": 496091.0
+      },
+      "levels": {
+        "last_sh": 0.04082,
+        "last_sl": 0.04014,
+        "prev_sh": 0.04077,
+        "prev_sl": 0.04015,
+        "sh_broken": true,
+        "sl_broken": false,
+        "near_sh": true,
+        "near_sl": false,
+        "dist_to_sl_pct": 0.018821803959912,
+        "dist_to_sh_pct": -0.0021999511121975016,
+        "order_type_long": "LIMIT",
+        "order_type_short": "LIMIT"
+      },
+      "quality": {
+        "score": 1,
+        "criteria": {
+          "c1_staircase": false,
+          "c2_volume": false,
+          "c3_structure": true
+        },
+        "signal": "NONE",
+        "action": "AVOID",
+        "target_advice": "not a momentum regime"
+      },
+      "highs": [
+        [
+          142,
+          0.04082
+        ],
+        [
+          141,
+          0.04077
+        ],
+        [
+          140,
+          0.04059
+        ],
+        [
+          137,
+          0.04093
+        ],
+        [
+          136,
+          0.04084
+        ],
+        [
+          131,
+          0.04098
+        ]
+      ],
+      "lows": [
+        [
+          139,
+          0.04014
+        ],
+        [
+          138,
+          0.04015
+        ],
+        [
+          137,
+          0.04036
+        ],
+        [
+          133,
+          0.04031
+        ],
+        [
+          132,
+          0.04036
+        ],
+        [
+          126,
+          0.03982
+        ]
+      ]
+    },
+    {
+      "symbol": "GWEIUSDT",
+      "close": 0.0216,
+      "window_chg_pct": -5.68,
+      "staircase": {
+        "direction": null,
+        "rising_lows_count": 3,
+        "rising_highs_count": 0,
+        "falling_lows_count": 3,
+        "falling_highs_count": 6,
+        "total_lows": 7,
+        "total_highs": 7,
+        "is_staircase": false,
+        "is_grinding_up": false,
+        "is_grinding_down": false,
+        "recent_highs": [
+          [
+            138,
+            0.02197
+          ],
+          [
+            137,
+            0.02192
+          ],
+          [
+            136,
+            0.02184
+          ],
+          [
+            133,
+            0.02166
+          ],
+          [
+            132,
+            0.02162
+          ],
+          [
+            130,
+            0.02147
+          ]
+        ],
+        "recent_lows": [
+          [
+            142,
+            0.02153
+          ],
+          [
+            141,
+            0.02155
+          ],
+          [
+            135,
+            0.02141
+          ],
+          [
+            125,
+            0.02071
+          ],
+          [
+            124,
+            0.02122
+          ],
+          [
+            123,
+            0.02153
+          ]
+        ]
+      },
+      "volume": {
+        "vol_ma": 4910925.5,
+        "vol_threshold": 5402018.05,
+        "vol_current": 1883288.0,
+        "above_threshold": false,
+        "regime": false,
+        "avg_vol_window": 4085143.0
+      },
+      "levels": {
+        "last_sh": 0.02197,
+        "last_sl": 0.02153,
+        "prev_sh": 0.02192,
+        "prev_sl": 0.02155,
+        "sh_broken": false,
+        "sl_broken": false,
+        "near_sh": false,
+        "near_sl": false,
+        "dist_to_sl_pct": 0.0032407407407407693,
+        "dist_to_sh_pct": 0.017129629629629575,
+        "order_type_long": "LIMIT",
+        "order_type_short": "LIMIT"
+      },
+      "quality": {
+        "score": 1,
+        "criteria": {
+          "c1_staircase": false,
+          "c2_volume": false,
+          "c3_structure": true
+        },
+        "signal": "NONE",
+        "action": "AVOID",
+        "target_advice": "not a momentum regime"
+      },
+      "highs": [
+        [
+          138,
+          0.02197
+        ],
+        [
+          137,
+          0.02192
+        ],
+        [
+          136,
+          0.02184
+        ],
+        [
+          133,
+          0.02166
+        ],
+        [
+          132,
+          0.02162
+        ],
+        [
+          130,
+          0.02147
+        ]
+      ],
+      "lows": [
+        [
+          142,
+          0.02153
+        ],
+        [
+          141,
+          0.02155
+        ],
+        [
+          135,
+          0.02141
+        ],
+        [
+          125,
+          0.02071
+        ],
+        [
+          124,
+          0.02122
+        ],
+        [
+          123,
+          0.02153
+        ]
+      ]
+    },
+    {
+      "symbol": "XMRUSDT",
+      "close": 579.03,
+      "window_chg_pct": -0.76,
+      "staircase": {
+        "direction": null,
+        "rising_lows_count": 6,
+        "rising_highs_count": 1,
+        "falling_lows_count": 2,
+        "falling_highs_count": 4,
+        "total_lows": 9,
+        "total_highs": 6,
+        "is_staircase": false,
+        "is_grinding_up": false,
+        "is_grinding_down": false,
+        "recent_highs": [
+          [
+            139,
+            581.74
+          ],
+          [
+            137,
+            581.61
+          ],
+          [
+            136,
+            579.7
+          ],
+          [
+            135,
+            578.57
+          ],
+          [
+            131,
+            579.16
+          ],
+          [
+            130,
+            577.44
+          ]
+        ],
+        "recent_lows": [
+          [
+            140,
+            577.67
+          ],
+          [
+            138,
+            578.06
+          ],
+          [
+            134,
+            575.63
+          ],
+          [
+            128,
+            572.58
+          ],
+          [
+            126,
+            573.26
+          ],
+          [
+            125,
+            574.14
+          ]
+        ]
+      },
+      "volume": {
+        "vol_ma": 794.56,
+        "vol_threshold": 874.01,
+        "vol_current": 485.71,
+        "above_threshold": false,
+        "regime": false,
+        "avg_vol_window": 434.16
+      },
+      "levels": {
+        "last_sh": 581.74,
+        "last_sl": 577.67,
+        "prev_sh": 581.61,
+        "prev_sl": 578.06,
+        "sh_broken": false,
+        "sl_broken": false,
+        "near_sh": false,
+        "near_sl": false,
+        "dist_to_sl_pct": 0.0023487556775987663,
+        "dist_to_sh_pct": 0.004680241092862264,
+        "order_type_long": "LIMIT",
+        "order_type_short": "LIMIT"
+      },
+      "quality": {
+        "score": 1,
+        "criteria": {
+          "c1_staircase": false,
+          "c2_volume": false,
+          "c3_structure": true
+        },
+        "signal": "NONE",
+        "action": "AVOID",
+        "target_advice": "not a momentum regime"
+      },
+      "highs": [
+        [
+          139,
+          581.74
+        ],
+        [
+          137,
+          581.61
+        ],
+        [
+          136,
+          579.7
+        ],
+        [
+          135,
+          578.57
+        ],
+        [
+          131,
+          579.16
+        ],
+        [
+          130,
+          577.44
+        ]
+      ],
+      "lows": [
+        [
+          140,
+          577.67
+        ],
+        [
+          138,
+          578.06
+        ],
+        [
+          134,
+          575.63
+        ],
+        [
+          128,
+          572.58
+        ],
+        [
+          126,
+          573.26
+        ],
+        [
+          125,
+          574.14
+        ]
+      ]
+    },
+    {
+      "symbol": "EPICUSDT",
+      "close": 0.2801,
+      "window_chg_pct": 8.23,
+      "staircase": {
+        "direction": null,
+        "rising_lows_count": 4,
+        "rising_highs_count": 3,
+        "falling_lows_count": 1,
+        "falling_highs_count": 3,
+        "total_lows": 6,
+        "total_highs": 7,
+        "is_staircase": false,
+        "is_grinding_up": false,
+        "is_grinding_down": false,
+        "recent_highs": [
+          [
+            142,
+            0.2805
+          ],
+          [
+            141,
+            0.2804
+          ],
+          [
+            137,
+            0.2812
+          ],
+          [
+            136,
+            0.2781
+          ],
+          [
+            133,
+            0.2784
+          ],
+          [
+            132,
+            0.278
+          ]
+        ],
+        "recent_lows": [
+          [
+            142,
+            0.2771
+          ],
+          [
+            128,
+            0.273
+          ],
+          [
+            126,
+            0.2735
+          ],
+          [
+            123,
+            0.276
+          ],
+          [
+            122,
+            0.2821
+          ],
+          [
+            121,
+            0.2822
+          ]
+        ]
+      },
+      "volume": {
+        "vol_ma": 156081.33,
+        "vol_threshold": 171689.46,
+        "vol_current": 101275.0,
+        "above_threshold": false,
+        "regime": false,
+        "avg_vol_window": 107023.08
+      },
+      "levels": {
+        "last_sh": 0.2805,
+        "last_sl": 0.2771,
+        "prev_sh": 0.2804,
+        "prev_sl": 0.273,
+        "sh_broken": false,
+        "sl_broken": false,
+        "near_sh": false,
+        "near_sl": false,
+        "dist_to_sl_pct": 0.01071046054980365,
+        "dist_to_sh_pct": 0.0014280614066405264,
+        "order_type_long": "LIMIT",
+        "order_type_short": "LIMIT"
+      },
+      "quality": {
+        "score": 1,
+        "criteria": {
+          "c1_staircase": false,
+          "c2_volume": false,
+          "c3_structure": true
+        },
+        "signal": "NONE",
+        "action": "AVOID",
+        "target_advice": "not a momentum regime"
+      },
+      "highs": [
+        [
+          142,
+          0.2805
+        ],
+        [
+          141,
+          0.2804
+        ],
+        [
+          137,
+          0.2812
+        ],
+        [
+          136,
+          0.2781
+        ],
+        [
+          133,
+          0.2784
+        ],
+        [
+          132,
+          0.278
+        ]
+      ],
+      "lows": [
+        [
+          142,
+          0.2771
+        ],
+        [
+          128,
+          0.273
+        ],
+        [
+          126,
+          0.2735
+        ],
+        [
+          123,
+          0.276
+        ],
+        [
+          122,
+          0.2821
+        ],
+        [
+          121,
+          0.2822
+        ]
+      ]
+    },
+    {
+      "symbol": "APRUSDT",
+      "close": 0.02721,
+      "window_chg_pct": 15.89,
+      "staircase": {
+        "direction": null,
+        "rising_lows_count": 3,
+        "rising_highs_count": 2,
+        "falling_lows_count": 3,
+        "falling_highs_count": 2,
+        "total_lows": 7,
+        "total_highs": 5,
+        "is_staircase": false,
+        "is_grinding_up": false,
+        "is_grinding_down": false,
+        "recent_highs": [
+          [
+            140,
+            0.02777
+          ],
+          [
+            137,
+            0.02756
+          ],
+          [
+            133,
+            0.02771
+          ],
+          [
+            123,
+            0.02943
+          ],
+          [
+            122,
+            0.02929
+          ]
+        ],
+        "recent_lows": [
+          [
+            142,
+            0.02707
+          ],
+          [
+            135,
+            0.02705
+          ],
+          [
+            131,
+            0.02704
+          ],
+          [
+            127,
+            0.02667
+          ],
+          [
+            126,
+            0.02771
+          ],
+          [
+            125,
+            0.0281
+          ]
+        ]
+      },
+      "volume": {
+        "vol_ma": 10693216.85,
+        "vol_threshold": 11762538.54,
+        "vol_current": 5002841.33,
+        "above_threshold": false,
+        "regime": false,
+        "avg_vol_window": 4977121.6
+      },
+      "levels": {
+        "last_sh": 0.02777,
+        "last_sl": 0.02707,
+        "prev_sh": 0.02756,
+        "prev_sl": 0.02705,
+        "sh_broken": false,
+        "sl_broken": false,
+        "near_sh": false,
+        "near_sl": false,
+        "dist_to_sl_pct": 0.005145167217934628,
+        "dist_to_sh_pct": 0.020580668871738258,
+        "order_type_long": "LIMIT",
+        "order_type_short": "LIMIT"
+      },
+      "quality": {
+        "score": 1,
+        "criteria": {
+          "c1_staircase": false,
+          "c2_volume": false,
+          "c3_structure": true
+        },
+        "signal": "NONE",
+        "action": "AVOID",
+        "target_advice": "not a momentum regime"
+      },
+      "highs": [
+        [
+          140,
+          0.02777
+        ],
+        [
+          137,
+          0.02756
+        ],
+        [
+          133,
+          0.02771
+        ],
+        [
+          123,
+          0.02943
+        ],
+        [
+          122,
+          0.02929
+        ],
+        [
+          118,
+          0.02975
+        ]
+      ],
+      "lows": [
+        [
+          142,
+          0.02707
+        ],
+        [
+          135,
+          0.02705
+        ],
+        [
+          131,
+          0.02704
+        ],
+        [
+          127,
+          0.02667
+        ],
+        [
+          126,
+          0.02771
+        ],
+        [
+          125,
+          0.0281
+        ]
+      ]
+    },
+    {
+      "symbol": "\u9f99\u867eUSDT",
+      "close": 0.02176,
+      "window_chg_pct": -17.04,
+      "staircase": {
+        "direction": null,
+        "rising_lows_count": 7,
+        "rising_highs_count": 2,
+        "falling_lows_count": 3,
+        "falling_highs_count": 2,
+        "total_lows": 11,
+        "total_highs": 5,
+        "is_staircase": false,
+        "is_grinding_up": false,
+        "is_grinding_down": false,
+        "recent_highs": [
+          [
+            142,
+            0.02228
+          ],
+          [
+            136,
+            0.02293
+          ],
+          [
+            135,
+            0.02253
+          ],
+          [
+            122,
+            0.02609
+          ],
+          [
+            121,
+            0.02599
+          ]
+        ],
+        "recent_lows": [
+          [
+            141,
+            0.02125
+          ],
+          [
+            140,
+            0.02132
+          ],
+          [
+            139,
+            0.02143
+          ],
+          [
+            132,
+            0.01873
+          ],
+          [
+            131,
+            0.01915
+          ],
+          [
+            130,
+            0.01964
+          ]
+        ]
+      },
+      "volume": {
+        "vol_ma": 41191262.35,
+        "vol_threshold": 45310388.59,
+        "vol_current": 11402668.0,
+        "above_threshold": false,
+        "regime": false,
+        "avg_vol_window": 12582931.0
+      },
+      "levels": {
+        "last_sh": 0.02228,
+        "last_sl": 0.02125,
+        "prev_sh": 0.02293,
+        "prev_sl": 0.02132,
+        "sh_broken": false,
+        "sl_broken": false,
+        "near_sh": false,
+        "near_sl": false,
+        "dist_to_sl_pct": 0.0234375,
+        "dist_to_sh_pct": 0.023897058823529393,
+        "order_type_long": "LIMIT",
+        "order_type_short": "LIMIT"
+      },
+      "quality": {
+        "score": 1,
+        "criteria": {
+          "c1_staircase": false,
+          "c2_volume": false,
+          "c3_structure": true
+        },
+        "signal": "NONE",
+        "action": "AVOID",
+        "target_advice": "not a momentum regime"
+      },
+      "highs": [
+        [
+          142,
+          0.02228
+        ],
+        [
+          136,
+          0.02293
+        ],
+        [
+          135,
+          0.02253
+        ],
+        [
+          122,
+          0.02609
+        ],
+        [
+          121,
+          0.02599
+        ],
+        [
+          117,
+          0.02597
+        ]
+      ],
+      "lows": [
+        [
+          141,
+          0.02125
+        ],
+        [
+          140,
+          0.02132
+        ],
+        [
+          139,
+          0.02143
+        ],
+        [
+          132,
+          0.01873
+        ],
+        [
+          131,
+          0.01915
+        ],
+        [
+          130,
+          0.01964
+        ]
+      ]
+    },
+    {
+      "symbol": "AGTUSDT",
+      "close": 0.062335,
+      "window_chg_pct": -22.76,
+      "staircase": {
+        "direction": null,
+        "rising_lows_count": 0,
+        "rising_highs_count": 0,
+        "falling_lows_count": 0,
+        "falling_highs_count": 0,
+        "total_lows": 14,
+        "total_highs": 0,
+        "is_staircase": false,
+        "is_grinding_up": false,
+        "is_grinding_down": false,
+        "recent_highs": [],
+        "recent_lows": [
+          [
+            142,
+            0.061316
+          ],
+          [
+            141,
+            0.062225
+          ],
+          [
+            140,
+            0.064355
+          ],
+          [
+            139,
+            0.06517
+          ],
+          [
+            136,
+            0.065188
+          ],
+          [
+            135,
+            0.065317
+          ]
+        ]
+      },
+      "volume": {
+        "vol_ma": 5442085.25,
+        "vol_threshold": 5986293.78,
+        "vol_current": 15480475.67,
+        "above_threshold": true,
+        "regime": true,
+        "avg_vol_window": 10553923.6
+      },
+      "levels": {
+        "last_sh": 0.069538,
+        "last_sl": 0.061316,
+        "prev_sh": 0.06983,
+        "prev_sl": 0.062225,
+        "sh_broken": false,
+        "sl_broken": false,
+        "near_sh": false,
+        "near_sl": false,
+        "dist_to_sl_pct": 0.01634715649314188,
+        "dist_to_sh_pct": 0.11555306007860754,
+        "order_type_long": "LIMIT",
+        "order_type_short": "MARKET"
+      },
+      "quality": {
+        "score": 2,
+        "criteria": {
+          "c1_staircase": false,
+          "c2_volume": true,
+          "c3_structure": true
+        },
+        "signal": "NONE",
+        "action": "CAUTIOUS",
+        "target_advice": "conservative \u2014 1R target"
+      },
+      "highs": [
+        [
+          119,
+          0.069538
+        ],
+        [
+          116,
+          0.06983
+        ],
+        [
+          112,
+          0.069382
+        ],
+        [
+          111,
+          0.0693
+        ],
+        [
+          108,
+          0.069614
+        ],
+        [
+          107,
+          0.068975
+        ]
+      ],
+      "lows": [
+        [
+          142,
+          0.061316
+        ],
+        [
+          141,
+          0.062225
+        ],
+        [
+          140,
+          0.064355
+        ],
+        [
+          139,
+          0.06517
+        ],
+        [
+          136,
+          0.065188
+        ],
+        [
+          135,
+          0.065317
+        ]
+      ]
+    },
+    {
+      "symbol": "AUSDT",
+      "close": 0.08802,
+      "window_chg_pct": -14.29,
+      "staircase": {
+        "direction": null,
+        "rising_lows_count": 9,
+        "rising_highs_count": 2,
+        "falling_lows_count": 1,
+        "falling_highs_count": 3,
+        "total_lows": 11,
+        "total_highs": 6,
+        "is_staircase": false,
+        "is_grinding_up": false,
+        "is_grinding_down": false,
+        "recent_highs": [
+          [
+            142,
+            0.08823
+          ],
+          [
+            141,
+            0.08735
+          ],
+          [
+            140,
+            0.08734
+          ],
+          [
+            136,
+            0.08777
+          ],
+          [
+            135,
+            0.08736
+          ],
+          [
+            122,
+            0.08905
+          ]
+        ],
+        "recent_lows": [
+          [
+            138,
+            0.0862
+          ],
+          [
+            137,
+            0.08627
+          ],
+          [
+            134,
+            0.086
+          ],
+          [
+            133,
+            0.08615
+          ],
+          [
+            131,
+            0.08632
+          ],
+          [
+            130,
+            0.08651
+          ]
+        ]
+      },
+      "volume": {
+        "vol_ma": 1403881.2,
+        "vol_threshold": 1544269.32,
+        "vol_current": 1271116.33,
+        "above_threshold": false,
+        "regime": false,
+        "avg_vol_window": 1048242.0
+      },
+      "levels": {
+        "last_sh": 0.08823,
+        "last_sl": 0.0862,
+        "prev_sh": 0.08735,
+        "prev_sl": 0.08627,
+        "sh_broken": false,
+        "sl_broken": false,
+        "near_sh": false,
+        "near_sl": false,
+        "dist_to_sl_pct": 0.020677118836628063,
+        "dist_to_sh_pct": 0.002385821404226333,
+        "order_type_long": "LIMIT",
+        "order_type_short": "LIMIT"
+      },
+      "quality": {
+        "score": 1,
+        "criteria": {
+          "c1_staircase": false,
+          "c2_volume": false,
+          "c3_structure": true
+        },
+        "signal": "NONE",
+        "action": "AVOID",
+        "target_advice": "not a momentum regime"
+      },
+      "highs": [
+        [
+          142,
+          0.08823
+        ],
+        [
+          141,
+          0.08735
+        ],
+        [
+          140,
+          0.08734
+        ],
+        [
+          136,
+          0.08777
+        ],
+        [
+          135,
+          0.08736
+        ],
+        [
+          122,
+          0.08905
+        ]
+      ],
+      "lows": [
+        [
+          138,
+          0.0862
+        ],
+        [
+          137,
+          0.08627
+        ],
+        [
+          134,
+          0.086
+        ],
+        [
+          133,
+          0.08615
+        ],
+        [
+          131,
+          0.08632
+        ],
+        [
+          130,
+          0.08651
+        ]
+      ]
+    },
+    {
+      "symbol": "\u6211\u8e0f\u9a6c\u6765\u4e86USDT",
+      "close": 0.009393,
+      "window_chg_pct": -15.74,
+      "staircase": {
+        "direction": null,
+        "rising_lows_count": 10,
+        "rising_highs_count": 2,
+        "falling_lows_count": 1,
+        "falling_highs_count": 1,
+        "total_lows": 12,
+        "total_highs": 4,
+        "is_staircase": false,
+        "is_grinding_up": false,
+        "is_grinding_down": false,
+        "recent_highs": [
+          [
+            142,
+            0.00944
+          ],
+          [
+            136,
+            0.009554
+          ],
+          [
+            121,
+            0.010114
+          ],
+          [
+            120,
+            0.010067
+          ]
+        ],
+        "recent_lows": [
+          [
+            140,
+            0.009336
+          ],
+          [
+            139,
+            0.00934
+          ],
+          [
+            138,
+            0.009432
+          ],
+          [
+            133,
+            0.009385
+          ],
+          [
+            130,
+            0.009449
+          ],
+          [
+            128,
+            0.009547
+          ]
+        ]
+      },
+      "volume": {
+        "vol_ma": 3263470.5,
+        "vol_threshold": 3589817.55,
+        "vol_current": 1436022.67,
+        "above_threshold": false,
+        "regime": false,
+        "avg_vol_window": 1559566.4
+      },
+      "levels": {
+        "last_sh": 0.00944,
+        "last_sl": 0.009336,
+        "prev_sh": 0.009554,
+        "prev_sl": 0.00934,
+        "sh_broken": false,
+        "sl_broken": false,
+        "near_sh": false,
+        "near_sl": false,
+        "dist_to_sl_pct": 0.006068348770360881,
+        "dist_to_sh_pct": 0.005003726179069538,
+        "order_type_long": "LIMIT",
+        "order_type_short": "LIMIT"
+      },
+      "quality": {
+        "score": 1,
+        "criteria": {
+          "c1_staircase": false,
+          "c2_volume": false,
+          "c3_structure": true
+        },
+        "signal": "NONE",
+        "action": "AVOID",
+        "target_advice": "not a momentum regime"
+      },
+      "highs": [
+        [
+          142,
+          0.00944
+        ],
+        [
+          136,
+          0.009554
+        ],
+        [
+          121,
+          0.010114
+        ],
+        [
+          120,
+          0.010067
+        ],
+        [
+          116,
+          0.010104
+        ],
+        [
+          109,
+          0.010267
+        ]
+      ],
+      "lows": [
+        [
+          140,
+          0.009336
+        ],
+        [
+          139,
+          0.00934
+        ],
+        [
+          138,
+          0.009432
+        ],
+        [
+          133,
+          0.009385
+        ],
+        [
+          130,
+          0.009449
+        ],
+        [
+          128,
+          0.009547
+        ]
+      ]
+    },
+    {
+      "symbol": "TAGUSDT",
+      "close": 0.000459,
+      "window_chg_pct": -15.07,
+      "staircase": {
+        "direction": null,
+        "rising_lows_count": 7,
+        "rising_highs_count": 2,
+        "falling_lows_count": 2,
+        "falling_highs_count": 3,
+        "total_lows": 10,
+        "total_highs": 6,
+        "is_staircase": false,
+        "is_grinding_up": false,
+        "is_grinding_down": false,
+        "recent_highs": [
+          [
+            142,
+            0.0004589
+          ],
+          [
+            141,
+            0.0004565
+          ],
+          [
+            140,
+            0.0004517
+          ],
+          [
+            132,
+            0.0004637
+          ],
+          [
+            122,
+            0.0004857
+          ],
+          [
+            120,
+            0.0004856
+          ]
+        ],
+        "recent_lows": [
+          [
+            139,
+            0.000447
+          ],
+          [
+            138,
+            0.0004479
+          ],
+          [
+            134,
+            0.0004375
+          ],
+          [
+            133,
+            0.0004439
+          ],
+          [
+            131,
+            0.0004537
+          ],
+          [
+            128,
+            0.0004484
+          ]
+        ]
+      },
+      "volume": {
+        "vol_ma": 95383140.6,
+        "vol_threshold": 104921454.66,
+        "vol_current": 39782277.67,
+        "above_threshold": false,
+        "regime": false,
+        "avg_vol_window": 40404078.8
+      },
+      "levels": {
+        "last_sh": 0.0004589,
+        "last_sl": 0.000447,
+        "prev_sh": 0.0004565,
+        "prev_sl": 0.0004479,
+        "sh_broken": true,
+        "sl_broken": false,
+        "near_sh": true,
+        "near_sl": false,
+        "dist_to_sl_pct": 0.026779882429784397,
+        "dist_to_sh_pct": -0.0008708904855214668,
+        "order_type_long": "LIMIT",
+        "order_type_short": "LIMIT"
+      },
+      "quality": {
+        "score": 1,
+        "criteria": {
+          "c1_staircase": false,
+          "c2_volume": false,
+          "c3_structure": true
+        },
+        "signal": "NONE",
+        "action": "AVOID",
+        "target_advice": "not a momentum regime"
+      },
+      "highs": [
+        [
+          142,
+          0.000459
+        ],
+        [
+          141,
+          0.000456
+        ],
+        [
+          140,
+          0.000452
+        ],
+        [
+          132,
+          0.000464
+        ],
+        [
+          122,
+          0.000486
+        ],
+        [
+          120,
+          0.000486
+        ]
+      ],
+      "lows": [
+        [
+          139,
+          0.000447
+        ],
+        [
+          138,
+          0.000448
+        ],
+        [
+          134,
+          0.000438
+        ],
+        [
+          133,
+          0.000444
+        ],
+        [
+          131,
+          0.000454
+        ],
+        [
+          128,
+          0.000448
+        ]
+      ]
+    },
+    {
+      "symbol": "AVAUSDT",
+      "close": 0.3249,
+      "window_chg_pct": -19.06,
+      "staircase": {
+        "direction": null,
+        "rising_lows_count": 5,
+        "rising_highs_count": 1,
+        "falling_lows_count": 1,
+        "falling_highs_count": 2,
+        "total_lows": 7,
+        "total_highs": 4,
+        "is_staircase": false,
+        "is_grinding_up": false,
+        "is_grinding_down": false,
+        "recent_highs": [
+          [
+            139,
+            0.3263
+          ],
+          [
+            138,
+            0.3259
+          ],
+          [
+            137,
+            0.3256
+          ],
+          [
+            134,
+            0.3268
+          ]
+        ],
+        "recent_lows": [
+          [
+            140,
+            0.3224
+          ],
+          [
+            130,
+            0.3173
+          ],
+          [
+            129,
+            0.3217
+          ],
+          [
+            127,
+            0.3233
+          ],
+          [
+            126,
+            0.325
+          ],
+          [
+            124,
+            0.328
+          ]
+        ]
+      },
+      "volume": {
+        "vol_ma": 678507.31,
+        "vol_threshold": 746358.04,
+        "vol_current": 306882.2,
+        "above_threshold": false,
+        "regime": false,
+        "avg_vol_window": 266452.6
+      },
+      "levels": {
+        "last_sh": 0.3263,
+        "last_sl": 0.3224,
+        "prev_sh": 0.3259,
+        "prev_sl": 0.3173,
+        "sh_broken": false,
+        "sl_broken": false,
+        "near_sh": false,
+        "near_sl": false,
+        "dist_to_sl_pct": 0.007694675284702992,
+        "dist_to_sh_pct": 0.004309018159433539,
+        "order_type_long": "LIMIT",
+        "order_type_short": "LIMIT"
+      },
+      "quality": {
+        "score": 1,
+        "criteria": {
+          "c1_staircase": false,
+          "c2_volume": false,
+          "c3_structure": true
+        },
+        "signal": "NONE",
+        "action": "AVOID",
+        "target_advice": "not a momentum regime"
+      },
+      "highs": [
+        [
+          139,
+          0.3263
+        ],
+        [
+          138,
+          0.3259
+        ],
+        [
+          137,
+          0.3256
+        ],
+        [
+          134,
+          0.3268
+        ],
+        [
+          119,
+          0.3416
+        ],
+        [
+          113,
+          0.341
+        ]
+      ],
+      "lows": [
+        [
+          140,
+          0.3224
+        ],
+        [
+          130,
+          0.3173
+        ],
+        [
+          129,
+          0.3217
+        ],
+        [
+          127,
+          0.3233
+        ],
+        [
+          126,
+          0.325
+        ],
+        [
+          124,
+          0.328
+        ]
+      ]
+    },
+    {
+      "symbol": "PONSUSDT",
+      "close": 0.2456,
+      "window_chg_pct": -12.63,
+      "staircase": {
+        "direction": null,
+        "rising_lows_count": 9,
+        "rising_highs_count": 0,
+        "falling_lows_count": 2,
+        "falling_highs_count": 1,
+        "total_lows": 12,
+        "total_highs": 2,
+        "is_staircase": false,
+        "is_grinding_up": false,
+        "is_grinding_down": false,
+        "recent_highs": [
+          [
+            135,
+            0.2472
+          ],
+          [
+            134,
+            0.2468
+          ]
+        ],
+        "recent_lows": [
+          [
+            140,
+            0.2434
+          ],
+          [
+            139,
+            0.2438
+          ],
+          [
+            138,
+            0.2441
+          ],
+          [
+            137,
+            0.2453
+          ],
+          [
+            133,
+            0.2447
+          ],
+          [
+            128,
+            0.2437
+          ]
+        ]
+      },
+      "volume": {
+        "vol_ma": 864214.75,
+        "vol_threshold": 950636.23,
+        "vol_current": 472787.0,
+        "above_threshold": false,
+        "regime": false,
+        "avg_vol_window": 431035.6
+      },
+      "levels": {
+        "last_sh": 0.2472,
+        "last_sl": 0.2434,
+        "prev_sh": 0.2468,
+        "prev_sl": 0.2438,
+        "sh_broken": false,
+        "sl_broken": false,
+        "near_sh": false,
+        "near_sl": false,
+        "dist_to_sl_pct": 0.008957654723127066,
+        "dist_to_sh_pct": 0.0065146579804559865,
+        "order_type_long": "LIMIT",
+        "order_type_short": "LIMIT"
+      },
+      "quality": {
+        "score": 1,
+        "criteria": {
+          "c1_staircase": false,
+          "c2_volume": false,
+          "c3_structure": true
+        },
+        "signal": "NONE",
+        "action": "AVOID",
+        "target_advice": "not a momentum regime"
+      },
+      "highs": [
+        [
+          135,
+          0.2472
+        ],
+        [
+          134,
+          0.2468
+        ],
+        [
+          117,
+          0.2561
+        ],
+        [
+          116,
+          0.2549
+        ],
+        [
+          112,
+          0.2545
+        ],
+        [
+          111,
+          0.2543
+        ]
+      ],
+      "lows": [
+        [
+          140,
+          0.2434
+        ],
+        [
+          139,
+          0.2438
+        ],
+        [
+          138,
+          0.2441
+        ],
+        [
+          137,
+          0.2453
+        ],
+        [
+          133,
+          0.2447
+        ],
+        [
+          128,
+          0.2437
+        ]
+      ]
+    },
+    {
+      "symbol": "BILLUSDT",
+      "close": 0.00585,
+      "window_chg_pct": -5.95,
+      "staircase": {
+        "direction": null,
+        "rising_lows_count": 3,
+        "rising_highs_count": 1,
+        "falling_lows_count": 1,
+        "falling_highs_count": 4,
+        "total_lows": 5,
+        "total_highs": 6,
+        "is_staircase": false,
+        "is_grinding_up": false,
+        "is_grinding_down": false,
+        "recent_highs": [
+          [
+            142,
+            0.00589
+          ],
+          [
+            140,
+            0.00584
+          ],
+          [
+            139,
+            0.00581
+          ],
+          [
+            138,
+            0.0058
+          ],
+          [
+            136,
+            0.00579
+          ],
+          [
+            122,
+            0.00597
+          ]
+        ],
+        "recent_lows": [
+          [
+            134,
+            0.00574
+          ],
+          [
+            133,
+            0.00575
+          ],
+          [
+            130,
+            0.0057
+          ],
+          [
+            125,
+            0.00586
+          ],
+          [
+            123,
+            0.00593
+          ]
+        ]
+      },
+      "volume": {
+        "vol_ma": 7944182.95,
+        "vol_threshold": 8738601.25,
+        "vol_current": 2936328.67,
+        "above_threshold": false,
+        "regime": false,
+        "avg_vol_window": 3840751.8
+      },
+      "levels": {
+        "last_sh": 0.00589,
+        "last_sl": 0.00574,
+        "prev_sh": 0.00584,
+        "prev_sl": 0.00575,
+        "sh_broken": false,
+        "sl_broken": false,
+        "near_sh": false,
+        "near_sl": false,
+        "dist_to_sl_pct": 0.018803418803418778,
+        "dist_to_sh_pct": 0.006837606837606855,
+        "order_type_long": "LIMIT",
+        "order_type_short": "LIMIT"
+      },
+      "quality": {
+        "score": 1,
+        "criteria": {
+          "c1_staircase": false,
+          "c2_volume": false,
+          "c3_structure": true
+        },
+        "signal": "NONE",
+        "action": "AVOID",
+        "target_advice": "not a momentum regime"
+      },
+      "highs": [
+        [
+          142,
+          0.00589
+        ],
+        [
+          140,
+          0.00584
+        ],
+        [
+          139,
+          0.00581
+        ],
+        [
+          138,
+          0.0058
+        ],
+        [
+          136,
+          0.00579
+        ],
+        [
+          122,
+          0.00597
+        ]
+      ],
+      "lows": [
+        [
+          134,
+          0.00574
+        ],
+        [
+          133,
+          0.00575
+        ],
+        [
+          130,
+          0.0057
+        ],
+        [
+          125,
+          0.00586
+        ],
+        [
+          123,
+          0.00593
+        ],
+        [
+          115,
+          0.00594
+        ]
+      ]
+    },
+    {
+      "symbol": "SQDUSDT",
+      "close": 0.01753,
+      "window_chg_pct": -11.64,
+      "staircase": {
+        "direction": null,
+        "rising_lows_count": 10,
+        "rising_highs_count": 1,
+        "falling_lows_count": 1,
+        "falling_highs_count": 2,
+        "total_lows": 12,
+        "total_highs": 4,
+        "is_staircase": false,
+        "is_grinding_up": false,
+        "is_grinding_down": false,
+        "recent_highs": [
+          [
+            142,
+            0.01743
+          ],
+          [
+            139,
+            0.01742
+          ],
+          [
+            129,
+            0.01794
+          ],
+          [
+            128,
+            0.01793
+          ]
+        ],
+        "recent_lows": [
+          [
+            141,
+            0.01731
+          ],
+          [
+            138,
+            0.01721
+          ],
+          [
+            137,
+            0.01723
+          ],
+          [
+            136,
+            0.01725
+          ],
+          [
+            134,
+            0.01726
+          ],
+          [
+            133,
+            0.01735
+          ]
+        ]
+      },
+      "volume": {
+        "vol_ma": 1254314.85,
+        "vol_threshold": 1379746.34,
+        "vol_current": 364876.0,
+        "above_threshold": false,
+        "regime": false,
+        "avg_vol_window": 729673.2
+      },
+      "levels": {
+        "last_sh": 0.01743,
+        "last_sl": 0.01731,
+        "prev_sh": 0.01742,
+        "prev_sl": 0.01721,
+        "sh_broken": true,
+        "sl_broken": false,
+        "near_sh": false,
+        "near_sl": false,
+        "dist_to_sl_pct": 0.01254991443240168,
+        "dist_to_sh_pct": -0.00570450656018251,
+        "order_type_long": "LIMIT",
+        "order_type_short": "LIMIT"
+      },
+      "quality": {
+        "score": 1,
+        "criteria": {
+          "c1_staircase": false,
+          "c2_volume": false,
+          "c3_structure": true
+        },
+        "signal": "NONE",
+        "action": "AVOID",
+        "target_advice": "not a momentum regime"
+      },
+      "highs": [
+        [
+          142,
+          0.01743
+        ],
+        [
+          139,
+          0.01742
+        ],
+        [
+          129,
+          0.01794
+        ],
+        [
+          128,
+          0.01793
+        ],
+        [
+          117,
+          0.01812
+        ],
+        [
+          116,
+          0.01811
+        ]
+      ],
+      "lows": [
+        [
+          141,
+          0.01731
+        ],
+        [
+          138,
+          0.01721
+        ],
+        [
+          137,
+          0.01723
+        ],
+        [
+          136,
+          0.01725
+        ],
+        [
+          134,
+          0.01726
+        ],
+        [
+          133,
+          0.01735
+        ]
+      ]
+    },
+    {
+      "symbol": "PYTHUSDT",
+      "close": 0.07191,
+      "window_chg_pct": -9.68,
+      "staircase": {
+        "direction": null,
+        "rising_lows_count": 9,
+        "rising_highs_count": 1,
+        "falling_lows_count": 0,
+        "falling_highs_count": 1,
+        "total_lows": 10,
+        "total_highs": 3,
+        "is_staircase": false,
+        "is_grinding_up": false,
+        "is_grinding_down": false,
+        "recent_highs": [
+          [
+            135,
+            0.07262
+          ],
+          [
+            122,
+            0.07449
+          ],
+          [
+            121,
+            0.07446
+          ]
+        ],
+        "recent_lows": [
+          [
+            142,
+            0.07138
+          ],
+          [
+            138,
+            0.07181
+          ],
+          [
+            137,
+            0.07203
+          ],
+          [
+            133,
+            0.07211
+          ],
+          [
+            131,
+            0.0722
+          ],
+          [
+            128,
+            0.07235
+          ]
+        ]
+      },
+      "volume": {
+        "vol_ma": 1942086.6,
+        "vol_threshold": 2136295.26,
+        "vol_current": 2547500.0,
+        "above_threshold": true,
+        "regime": true,
+        "avg_vol_window": 2124154.2
+      },
+      "levels": {
+        "last_sh": 0.07262,
+        "last_sl": 0.07138,
+        "prev_sh": 0.07449,
+        "prev_sl": 0.07181,
+        "sh_broken": false,
+        "sl_broken": false,
+        "near_sh": false,
+        "near_sl": false,
+        "dist_to_sl_pct": 0.007370324016131313,
+        "dist_to_sh_pct": 0.00987345292727023,
+        "order_type_long": "LIMIT",
+        "order_type_short": "LIMIT"
+      },
+      "quality": {
+        "score": 2,
+        "criteria": {
+          "c1_staircase": false,
+          "c2_volume": true,
+          "c3_structure": true
+        },
+        "signal": "NONE",
+        "action": "CAUTIOUS",
+        "target_advice": "conservative \u2014 1R target"
+      },
+      "highs": [
+        [
+          135,
+          0.07262
+        ],
+        [
+          122,
+          0.07449
+        ],
+        [
+          121,
+          0.07446
+        ],
+        [
+          116,
+          0.07472
+        ],
+        [
+          112,
+          0.07506
+        ],
+        [
+          111,
+          0.07505
+        ]
+      ],
+      "lows": [
+        [
+          142,
+          0.07138
+        ],
+        [
+          138,
+          0.07181
+        ],
+        [
+          137,
+          0.07203
+        ],
+        [
+          133,
+          0.07211
+        ],
+        [
+          131,
+          0.0722
+        ],
+        [
+          128,
+          0.07235
+        ]
+      ]
+    },
+    {
+      "symbol": "USELESSUSDT",
+      "close": 0.13426,
+      "window_chg_pct": -11.0,
+      "staircase": {
+        "direction": null,
+        "rising_lows_count": 12,
+        "rising_highs_count": 2,
+        "falling_lows_count": 1,
+        "falling_highs_count": 4,
+        "total_lows": 14,
+        "total_highs": 7,
+        "is_staircase": false,
+        "is_grinding_up": false,
+        "is_grinding_down": false,
+        "recent_highs": [
+          [
+            142,
+            0.13437
+          ],
+          [
+            140,
+            0.13429
+          ],
+          [
+            139,
+            0.13402
+          ],
+          [
+            138,
+            0.1339
+          ],
+          [
+            134,
+            0.13348
+          ],
+          [
+            128,
+            0.13535
+          ]
+        ],
+        "recent_lows": [
+          [
+            138,
+            0.13274
+          ],
+          [
+            133,
+            0.132
+          ],
+          [
+            132,
+            0.13223
+          ],
+          [
+            131,
+            0.1328
+          ],
+          [
+            130,
+            0.13284
+          ],
+          [
+            128,
+            0.13323
+          ]
+        ]
+      },
+      "volume": {
+        "vol_ma": 943083.5,
+        "vol_threshold": 1037391.85,
+        "vol_current": 478231.67,
+        "above_threshold": false,
+        "regime": false,
+        "avg_vol_window": 598543.4
+      },
+      "levels": {
+        "last_sh": 0.13437,
+        "last_sl": 0.13274,
+        "prev_sh": 0.13429,
+        "prev_sl": 0.132,
+        "sh_broken": false,
+        "sl_broken": false,
+        "near_sh": false,
+        "near_sl": false,
+        "dist_to_sl_pct": 0.011321316847907,
+        "dist_to_sh_pct": 0.0008193058245195814,
+        "order_type_long": "LIMIT",
+        "order_type_short": "LIMIT"
+      },
+      "quality": {
+        "score": 1,
+        "criteria": {
+          "c1_staircase": false,
+          "c2_volume": false,
+          "c3_structure": true
+        },
+        "signal": "NONE",
+        "action": "AVOID",
+        "target_advice": "not a momentum regime"
+      },
+      "highs": [
+        [
+          142,
+          0.13437
+        ],
+        [
+          140,
+          0.13429
+        ],
+        [
+          139,
+          0.13402
+        ],
+        [
+          138,
+          0.1339
+        ],
+        [
+          134,
+          0.13348
+        ],
+        [
+          128,
+          0.13535
+        ]
+      ],
+      "lows": [
+        [
+          138,
+          0.13274
+        ],
+        [
+          133,
+          0.132
+        ],
+        [
+          132,
+          0.13223
+        ],
+        [
+          131,
+          0.1328
+        ],
+        [
+          130,
+          0.13284
+        ],
+        [
+          128,
+          0.13323
+        ]
+      ]
+    },
+    {
+      "symbol": "CYSUSDT",
+      "close": 0.1128,
+      "window_chg_pct": -6.55,
+      "staircase": {
+        "direction": null,
+        "rising_lows_count": 5,
+        "rising_highs_count": 2,
+        "falling_lows_count": 2,
+        "falling_highs_count": 3,
+        "total_lows": 8,
+        "total_highs": 6,
+        "is_staircase": false,
+        "is_grinding_up": false,
+        "is_grinding_down": false,
+        "recent_highs": [
+          [
+            142,
+            0.1128
+          ],
+          [
+            139,
+            0.1125
+          ],
+          [
+            136,
+            0.1126
+          ],
+          [
+            135,
+            0.1124
+          ],
+          [
+            121,
+            0.115
+          ],
+          [
+            120,
+            0.1149
+          ]
+        ],
+        "recent_lows": [
+          [
+            138,
+            0.1118
+          ],
+          [
+            134,
+            0.1117
+          ],
+          [
+            133,
+            0.1118
+          ],
+          [
+            128,
+            0.1115
+          ],
+          [
+            127,
+            0.1122
+          ],
+          [
+            126,
+            0.1124
+          ]
+        ]
+      },
+      "volume": {
+        "vol_ma": 134030.1,
+        "vol_threshold": 147433.11,
+        "vol_current": 84953.0,
+        "above_threshold": false,
+        "regime": false,
+        "avg_vol_window": 74976.8
+      },
+      "levels": {
+        "last_sh": 0.1128,
+        "last_sl": 0.1118,
+        "prev_sh": 0.1125,
+        "prev_sl": 0.1117,
+        "sh_broken": false,
+        "sl_broken": false,
+        "near_sh": false,
+        "near_sl": false,
+        "dist_to_sl_pct": 0.008865248226950362,
+        "dist_to_sh_pct": 0.0,
+        "order_type_long": "LIMIT",
+        "order_type_short": "LIMIT"
+      },
+      "quality": {
+        "score": 1,
+        "criteria": {
+          "c1_staircase": false,
+          "c2_volume": false,
+          "c3_structure": true
+        },
+        "signal": "NONE",
+        "action": "AVOID",
+        "target_advice": "not a momentum regime"
+      },
+      "highs": [
+        [
+          142,
+          0.1128
+        ],
+        [
+          139,
+          0.1125
+        ],
+        [
+          136,
+          0.1126
+        ],
+        [
+          135,
+          0.1124
+        ],
+        [
+          121,
+          0.115
+        ],
+        [
+          120,
+          0.1149
+        ]
+      ],
+      "lows": [
+        [
+          138,
+          0.1118
+        ],
+        [
+          134,
+          0.1117
+        ],
+        [
+          133,
+          0.1118
+        ],
+        [
+          128,
+          0.1115
+        ],
+        [
+          127,
+          0.1122
+        ],
+        [
+          126,
+          0.1124
+        ]
+      ]
+    },
+    {
+      "symbol": "KOMAUSDT",
+      "close": 0.016575,
+      "window_chg_pct": -8.75,
+      "staircase": {
+        "direction": null,
+        "rising_lows_count": 11,
+        "rising_highs_count": 2,
+        "falling_lows_count": 2,
+        "falling_highs_count": 0,
+        "total_lows": 14,
+        "total_highs": 3,
+        "is_staircase": false,
+        "is_grinding_up": false,
+        "is_grinding_down": false,
+        "recent_highs": [
+          [
+            140,
+            0.016598
+          ],
+          [
+            131,
+            0.016727
+          ],
+          [
+            123,
+            0.016947
+          ]
+        ],
+        "recent_lows": [
+          [
+            141,
+            0.0165
+          ],
+          [
+            140,
+            0.016533
+          ],
+          [
+            138,
+            0.01655
+          ],
+          [
+            137,
+            0.016569
+          ],
+          [
+            136,
+            0.016578
+          ],
+          [
+            135,
+            0.016591
+          ]
+        ]
+      },
+      "volume": {
+        "vol_ma": 567924.25,
+        "vol_threshold": 624716.68,
+        "vol_current": 546640.33,
+        "above_threshold": false,
+        "regime": false,
+        "avg_vol_window": 384496.4
+      },
+      "levels": {
+        "last_sh": 0.016598,
+        "last_sl": 0.0165,
+        "prev_sh": 0.016727,
+        "prev_sl": 0.016533,
+        "sh_broken": false,
+        "sl_broken": false,
+        "near_sh": false,
+        "near_sl": false,
+        "dist_to_sl_pct": 0.004524886877827975,
+        "dist_to_sh_pct": 0.001387631975867402,
+        "order_type_long": "LIMIT",
+        "order_type_short": "LIMIT"
+      },
+      "quality": {
+        "score": 1,
+        "criteria": {
+          "c1_staircase": false,
+          "c2_volume": false,
+          "c3_structure": true
+        },
+        "signal": "NONE",
+        "action": "AVOID",
+        "target_advice": "not a momentum regime"
+      },
+      "highs": [
+        [
+          140,
+          0.016598
+        ],
+        [
+          131,
+          0.016727
+        ],
+        [
+          123,
+          0.016947
+        ],
+        [
+          119,
+          0.016971
+        ],
+        [
+          118,
+          0.01696
+        ],
+        [
+          108,
+          0.017102
+        ]
+      ],
+      "lows": [
+        [
+          141,
+          0.0165
+        ],
+        [
+          140,
+          0.016533
+        ],
+        [
+          138,
+          0.01655
+        ],
+        [
+          137,
+          0.016569
+        ],
+        [
+          136,
+          0.016578
+        ],
+        [
+          135,
+          0.016591
+        ]
+      ]
+    },
+    {
+      "symbol": "LSKUSDT",
+      "close": 0.18285,
+      "window_chg_pct": -9.11,
+      "staircase": {
+        "direction": null,
+        "rising_lows_count": 7,
+        "rising_highs_count": 2,
+        "falling_lows_count": 1,
+        "falling_highs_count": 6,
+        "total_lows": 9,
+        "total_highs": 9,
+        "is_staircase": false,
+        "is_grinding_up": false,
+        "is_grinding_down": false,
+        "recent_highs": [
+          [
+            142,
+            0.18307
+          ],
+          [
+            141,
+            0.18275
+          ],
+          [
+            140,
+            0.18252
+          ],
+          [
+            137,
+            0.18288
+          ],
+          [
+            136,
+            0.18275
+          ],
+          [
+            135,
+            0.18252
+          ]
+        ],
+        "recent_lows": [
+          [
+            138,
+            0.18045
+          ],
+          [
+            133,
+            0.18079
+          ],
+          [
+            130,
+            0.18179
+          ],
+          [
+            129,
+            0.18247
+          ],
+          [
+            128,
+            0.18282
+          ],
+          [
+            125,
+            0.18247
+          ]
+        ]
+      },
+      "volume": {
+        "vol_ma": 553045.9,
+        "vol_threshold": 608350.49,
+        "vol_current": 242825.0,
+        "above_threshold": false,
+        "regime": false,
+        "avg_vol_window": 340241.2
+      },
+      "levels": {
+        "last_sh": 0.18307,
+        "last_sl": 0.18045,
+        "prev_sh": 0.18275,
+        "prev_sl": 0.18079,
+        "sh_broken": false,
+        "sl_broken": false,
+        "near_sh": false,
+        "near_sl": false,
+        "dist_to_sl_pct": 0.013125512715340515,
+        "dist_to_sh_pct": 0.001203171998906196,
+        "order_type_long": "LIMIT",
+        "order_type_short": "LIMIT"
+      },
+      "quality": {
+        "score": 1,
+        "criteria": {
+          "c1_staircase": false,
+          "c2_volume": false,
+          "c3_structure": true
+        },
+        "signal": "NONE",
+        "action": "AVOID",
+        "target_advice": "not a momentum regime"
+      },
+      "highs": [
+        [
+          142,
+          0.18307
+        ],
+        [
+          141,
+          0.18275
+        ],
+        [
+          140,
+          0.18252
+        ],
+        [
+          137,
+          0.18288
+        ],
+        [
+          136,
+          0.18275
+        ],
+        [
+          135,
+          0.18252
+        ]
+      ],
+      "lows": [
+        [
+          138,
+          0.18045
+        ],
+        [
+          133,
+          0.18079
+        ],
+        [
+          130,
+          0.18179
+        ],
+        [
+          129,
+          0.18247
+        ],
+        [
+          128,
+          0.18282
+        ],
+        [
+          125,
+          0.18247
+        ]
+      ]
+    }
+  ]
+}

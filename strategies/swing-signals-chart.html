@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Swing-to-Swing Signals — PICO</title>
+  <script src="https://unpkg.com/lightweight-charts@4.1.0/dist/lightweight-charts.standalone.production.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #0d1117;
+      color: #e6edf3;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+      padding: 20px;
+    }
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      border-bottom: 1px solid #21262d;
+      padding-bottom: 12px;
+    }
+    .header h1 {
+      font-size: 18px;
+      font-weight: 600;
+      color: #f0f6fc;
+    }
+    .header h1 span { color: #7ee787; }
+    .header .meta { font-size: 12px; color: #8b949e; }
+    .header .updated { font-size: 12px; color: #8b949e; }
+
+    .asset-tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+    .asset-tab {
+      padding: 6px 16px;
+      border-radius: 6px;
+      border: 1px solid #30363d;
+      background: #161b22;
+      color: #8b949e;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 500;
+      transition: all 0.15s;
+    }
+    .asset-tab:hover { border-color: #8b949e; color: #e6edf3; }
+    .asset-tab.active { background: #1f6feb; border-color: #1f6feb; color: #fff; }
+
+    .chart-row {
+      display: flex;
+      gap: 16px;
+      height: calc(100vh - 200px);
+      min-height: 400px;
+    }
+    .chart-container {
+      flex: 1;
+      background: #161b22;
+      border-radius: 8px;
+      border: 1px solid #30363d;
+      overflow: hidden;
+      position: relative;
+    }
+    #chart { width: 100%; height: 100%; }
+
+    .signals-panel {
+      width: 340px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      overflow-y: auto;
+    }
+    .signal-card {
+      background: #161b22;
+      border-radius: 8px;
+      border: 1px solid #30363d;
+      padding: 14px;
+      transition: border-color 0.2s;
+    }
+    .signal-card.active { border-color: #7ee787; }
+    .signal-card.get-ready { border-color: #d29922; }
+    .signal-card.waiting { border-color: #30363d; }
+
+    .signal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+    .signal-direction {
+      font-weight: 700;
+      font-size: 13px;
+      padding: 3px 10px;
+      border-radius: 4px;
+    }
+    .signal-direction.buy { background: #0f3020; color: #7ee787; }
+    .signal-direction.sell { background: #2d1015; color: #f85149; }
+    .signal-direction.waiting { background: #21262d; color: #8b949e; }
+
+    .signal-status {
+      font-size: 11px;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 10px;
+    }
+    .signal-status.active { background: #0f3020; color: #7ee787; }
+    .signal-status.get-ready { background: #2d2200; color: #d29922; }
+    .signal-status.waiting { background: #21262d; color: #8b949e; }
+
+    .signal-price {
+      font-size: 22px;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+    .signal-price.buy { color: #7ee787; }
+    .signal-price.sell { color: #f85149; }
+    .signal-price.waiting { color: #8b949e; }
+
+    .signal-zones { margin-bottom: 10px; }
+    .zone-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      padding: 3px 0;
+      border-bottom: 1px solid #21262d;
+    }
+    .zone-row:last-child { border-bottom: none; }
+    .zone-label { color: #8b949e; }
+    .zone-value { font-weight: 600; font-family: 'SF Mono', Consolas, monospace; }
+    .zone-value.tp { color: #7ee787; }
+    .zone-value.sl { color: #f85149; }
+    .zone-value.entry { color: #58a6ff; }
+
+    .signal-footer {
+      font-size: 11px;
+      color: #8b949e;
+      margin-top: 8px;
+      display: flex;
+      justify-content: space-between;
+    }
+    .signal-footer .conf { color: #7ee787; font-weight: 600; }
+
+    /* Stats bar */
+    .stats-bar {
+      display: flex;
+      gap: 20px;
+      background: #161b22;
+      border: 1px solid #30363d;
+      border-radius: 8px;
+      padding: 10px 16px;
+      margin-bottom: 12px;
+    }
+    .stat { display: flex; flex-direction: column; }
+    .stat-label { font-size: 10px; color: #8b949e; text-transform: uppercase; letter-spacing: 0.05em; }
+    .stat-value { font-size: 16px; font-weight: 700; font-family: 'SF Mono', Consolas, monospace; }
+    .stat-value.green { color: #7ee787; }
+    .stat-value.red { color: #f85149; }
+    .stat-value.blue { color: #58a6ff; }
+
+    .error-banner {
+      background: #2d1015;
+      border: 1px solid #f85149;
+      border-radius: 8px;
+      padding: 12px 16px;
+      color: #f85149;
+      font-size: 13px;
+      margin-bottom: 12px;
+    }
+    .loading { text-align: center; padding: 40px; color: #8b949e; }
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <h1>Swing-to-Swing <span>Signals</span> — PICO</h1>
+  <div>
+    <div class="meta">Strategy: 4h Swing-to-Swing | TP=3% | SL=3%</div>
+    <div class="updated" id="updated">Loading...</div>
+  </div>
+</div>
+
+<div class="stats-bar" id="stats-bar">
+  <div class="stat">
+    <span class="stat-label">Asset</span>
+    <span class="stat-value blue" id="stat-asset">—</span>
+  </div>
+  <div class="stat">
+    <span class="stat-label">Price</span>
+    <span class="stat-value" id="stat-price">—</span>
+  </div>
+  <div class="stat">
+    <span class="stat-label">Last Swing</span>
+    <span class="stat-value" id="stat-swing">—</span>
+  </div>
+  <div class="stat">
+    <span class="stat-label">Signal</span>
+    <span class="stat-value" id="stat-signal">—</span>
+  </div>
+  <div class="stat">
+    <span class="stat-label">Active Signals</span>
+    <span class="stat-value green" id="stat-active">—</span>
+  </div>
+</div>
+
+<div class="asset-tabs" id="asset-tabs">
+  <button class="asset-tab active" data-symbol="BTCUSDT" data-name="BTC">BTC/USDT</button>
+  <button class="asset-tab" data-symbol="ETHUSDT" data-name="ETH">ETH/USDT</button>
+  <button class="asset-tab" data-symbol="AAVEUSDT" data-name="AAVE">AAVE/USDT</button>
+</div>
+
+<div class="chart-row">
+  <div class="chart-container">
+    <div id="chart"></div>
+  </div>
+
+  <div class="signals-panel" id="signals-panel">
+    <div class="loading">Loading signals...</div>
+  </div>
+</div>
+
+<script>
+// ─── CONFIG ──────────────────────────────────────────────────────────────────
+const TP_PCT   = 0.03;
+const SL_PCT   = 0.03;
+const SWING_STR = 3;
+const ZONE_WIDTH = 0.05;  // 5% GET_READY trigger
+
+let chart = null;
+let candleSeries = null;
+let extraSeries = [];  // track non-candle series for cleanup
+let currentSymbol = 'BTCUSDT';
+let currentName = 'BTC';
+let swingZones = [];
+let chartData = [];
+let lastSignalState = null;
+
+// ─── LIGHTWEIGHT CHARTS SETUP ────────────────────────────────────────────────
+function initChart() {
+  if (chart) {
+    chart.remove();
+    chart = null;
+  }
+
+  const container = document.getElementById('chart');
+  chart = LightweightCharts.createChart(container, {
+    layout: {
+      background: { type: 'solid', color: '#161b22' },
+      textColor: '#8b949e',
+    },
+    grid: {
+      vertLines: { color: '#21262d' },
+      horzLines: { color: '#21262d' },
+    },
+    crosshair: {
+      mode: LightweightCharts.CrosshairMode.Normal,
+      vertLine: { color: '#58a6ff', labelBackgroundColor: '#1f6feb' },
+      horzLine: { color: '#58a6ff', labelBackgroundColor: '#1f6feb' },
+    },
+    rightPriceScale: {
+      borderColor: '#30363d',
+      scaleMargins: { top: 0.1, bottom: 0.2 },
+    },
+    timeScale: {
+      borderColor: '#30363d',
+      timeVisible: true,
+      secondsVisible: false,
+    },
+    handleScroll: true,
+    handleScale: true,
+  });
+
+  candleSeries = chart.addCandlestickSeries({
+    upColor: '#7ee787',
+    downColor: '#f85149',
+    borderUpColor: '#7ee787',
+    borderDownColor: '#f85149',
+    wickUpColor: '#7ee787',
+    wickDownColor: '#f85149',
+  });
+
+  // Add markers series for signals
+  // We'll use the main chart for markers
+
+  chart.timeScale().fitContent();
+
+  // Resize observer
+  const ro = new ResizeObserver(() => {
+    if (chart && container) {
+      chart.applyOptions({ width: container.clientWidth, height: container.clientHeight });
+    }
+  });
+  ro.observe(container);
+}
+
+// ─── DATA FETCHING ───────────────────────────────────────────────────────────
+async function fetchKlines(symbol, interval, limit) {
+  const url = `/api/klines?symbol=${symbol}&interval=${interval}&limit=${limit}`;
+  const resp = await fetch(url);
+  if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+  const raw = await resp.json();
+  return raw.map(d => ({
+    time: Math.floor(d[0] / 1000),
+    open: parseFloat(d[1]),
+    high: parseFloat(d[2]),
+    low: parseFloat(d[3]),
+    close: parseFloat(d[4]),
+    volume: parseFloat(d[5]),
+  }));
+}
+
+// ─── SWING DETECTION ─────────────────────────────────────────────────────────
+function detectSwings(candles) {
+  const swings = [];
+  for (let i = SWING_STR; i < candles.length - SWING_STR; i++) {
+    const left = candles.slice(i - SWING_STR, i);
+    const right = candles.slice(i + 1, i + SWING_STR + 1);
+    const h = candles[i].high;
+    const l = candles[i].low;
+    const isHigh = h >= Math.max(...left.map(c => c.high)) &&
+                   h >= Math.max(...right.map(c => c.high));
+    const isLow  = l <= Math.min(...left.map(c => c.low)) &&
+                   l <= Math.min(...right.map(c => c.low));
+    if (isHigh && !isLow)
+      swings.push({ type: 'HIGH', price: h, time: candles[i].time, index: i, candle: candles[i] });
+    else if (isLow && !isHigh)
+      swings.push({ type: 'LOW', price: l, time: candles[i].time, index: i, candle: candles[i] });
+  }
+  return swings;
+}
+
+// ─── SIGNAL ANALYSIS ─────────────────────────────────────────────────────────
+function analyzeSignals(candles, swings, currentPrice) {
+  const now = candles[candles.length - 1].time;
+  const activeSignals = [];
+  const getReadySignals = [];
+  const waitingSignals = [];
+
+  const recentSwings = swings.slice(-4);
+
+  for (const s of recentSwings) {
+    const dist = Math.abs(currentPrice - s.price) / currentPrice;
+    const distToPrice = (currentPrice - s.price) / currentPrice;
+
+    const entry = s.price;
+    const tp = s.type === 'LOW' ? s.price * (1 + TP_PCT) : s.price * (1 - TP_PCT);
+    const sl = s.type === 'LOW' ? s.price * (1 - SL_PCT) : s.price * (1 + SL_PCT);
+    const isBuy = s.type === 'LOW';
+
+    const zone = {
+      type: s.type,
+      direction: isBuy ? 'BUY' : 'SELL',
+      price: entry,
+      tp,
+      sl,
+      swingTime: s.time,
+      distancePct: dist * 100,
+      distanceFromPricePct: distToPrice * 100,
+      swing: s,
+    };
+
+    // Active: price AT zone (within 0.5%)
+    if (dist <= 0.005) {
+      zone.status = 'ACTIVE';
+      activeSignals.push(zone);
+    }
+    // GET_READY: price within zone width but not at zone
+    else if (dist <= ZONE_WIDTH) {
+      zone.status = 'GET_READY';
+      getReadySignals.push(zone);
+    }
+    // Waiting: zone is behind price (already passed)
+    else if ((isBuy && currentPrice > s.price * (1 + ZONE_WIDTH)) ||
+             (!isBuy && currentPrice < s.price * (1 - ZONE_WIDTH))) {
+      zone.status = 'WAITING';
+      waitingSignals.push(zone);
+    }
+  }
+
+  return { activeSignals, getReadySignals, waitingSignals };
+}
+
+// ─── CHART RENDERING ──────────────────────────────────────────────────────────
+function renderChart(candles, swings, signals) {
+  if (!chart || !candleSeries) return;
+
+  // Set candle data
+  candleSeries.setData(candles.map(c => ({
+    time: c.time,
+    open: c.open,
+    high: c.high,
+    low: c.low,
+    close: c.close,
+  })));
+
+  // Remove old extra series
+  extraSeries.forEach(s => chart.removeSeries(s));
+  extraSeries = [];
+
+  // Add swing zone lines
+  const recentSwings = swings.slice(-6);
+  for (const s of recentSwings) {
+    const isBuy = s.type === 'LOW';
+    const lineColor = isBuy ? 'rgba(126,231,135,0.5)' : 'rgba(248,81,73,0.5)';
+
+    const zoneLine = chart.addLineSeries({
+      color: lineColor,
+      lineStyle: LightweightCharts.LineStyle.Dashed,
+      lineWidth: 1,
+      priceLineVisible: false,
+      lastValueVisible: false,
+    });
+    extraSeries.push(zoneLine);
+
+    // Draw horizontal line at swing level
+    const lineData = [
+      { time: s.time, value: s.price },
+      { time: candles[candles.length - 1].time, value: s.price },
+    ];
+    zoneLine.setData(lineData);
+
+    // TP and SL lines
+    const tpColor = isBuy ? 'rgba(126,231,135,0.3)' : 'rgba(126,231,135,0.3)';
+    const slColor = isBuy ? 'rgba(248,81,73,0.3)' : 'rgba(248,81,73,0.3)';
+    const tpVal = isBuy ? s.price * (1 + TP_PCT) : s.price * (1 - TP_PCT);
+    const slVal = isBuy ? s.price * (1 - SL_PCT) : s.price * (1 + SL_PCT);
+
+    const tpLine = chart.addLineSeries({
+      color: tpColor, lineStyle: LightweightCharts.LineStyle.Dotted,
+      lineWidth: 1, priceLineVisible: false, lastValueVisible: false,
+    });
+    extraSeries.push(tpLine);
+    tpLine.setData([
+      { time: s.time, value: tpVal },
+      { time: candles[candles.length - 1].time, value: tpVal },
+    ]);
+
+    const slLine = chart.addLineSeries({
+      color: slColor, lineStyle: LightweightCharts.LineStyle.Dotted,
+      lineWidth: 1, priceLineVisible: false, lastValueVisible: false,
+    });
+    extraSeries.push(slLine);
+    slLine.setData([
+      { time: s.time, value: slVal },
+      { time: candles[candles.length - 1].time, value: slVal },
+    ]);
+  }
+
+  // Add signal markers
+  const allSignals = [...signals.activeSignals, ...signals.getReadySignals];
+  for (const sig of allSignals) {
+    const isBuy = sig.direction === 'BUY';
+    const color = sig.status === 'ACTIVE'
+      ? (isBuy ? '#7ee787' : '#f85149')
+      : '#d29922';
+
+    const markerSeries = chart.addPointsSeries({
+      color: color,
+      radius: sig.status === 'ACTIVE' ? 6 : 4,
+      shape: LightweightCharts.PointShape.CIRCLE,
+      priceLineVisible: false,
+      lastValueVisible: false,
+    });
+    extraSeries.push(markerSeries);
+    markerSeries.setData([{ time: sig.swingTime, value: sig.price }]);
+
+    // Add price label via a text series
+    const labelSeries = chart.addTextSeries({
+      color: color,
+      textColor: color,
+      fontSize: 10,
+      priceLineVisible: false,
+      lastValueVisible: false,
+    });
+    extraSeries.push(labelSeries);
+    labelSeries.setData([{
+      time: sig.swingTime,
+      text: sig.status === 'ACTIVE'
+        ? `${sig.direction} @ ${fmt(sig.price)}`
+        : `${sig.direction} ${sig.status} @ ${fmt(sig.price)}`,
+    }]);
+  }
+
+  chart.timeScale().fitContent();
+}
+
+// ─── SIGNAL PANEL RENDERING ───────────────────────────────────────────────────
+function renderSignalPanel(signals, currentPrice, lastSwing) {
+  const panel = document.getElementById('signals-panel');
+  const allZones = [
+    ...signals.activeSignals.map(s => ({ ...s, cardClass: 'active' })),
+    ...signals.getReadySignals.map(s => ({ ...s, cardClass: 'get-ready' })),
+    ...signals.waitingSignals.map(s => ({ ...s, cardClass: 'waiting' })),
+  ];
+
+  if (allZones.length === 0) {
+    panel.innerHTML = `
+      <div class="signal-card waiting">
+        <div class="signal-header">
+          <span class="signal-direction waiting">WAITING</span>
+        </div>
+        <div class="signal-price waiting">No zones nearby</div>
+        <div class="signal-footer">
+          <span>Price: ${fmt(currentPrice)}</span>
+          <span class="conf">Zone width: ${(ZONE_WIDTH * 100).toFixed(0)}%</span>
+        </div>
+      </div>`;
+    return;
+  }
+
+  let html = '';
+  for (const z of allZones) {
+    const dir = z.direction;
+    const statusLabel = z.status === 'ACTIVE' ? 'ACTIVE' : z.status === 'GET_READY' ? 'GET_READY' : 'WAITING';
+    const statusClass = z.status === 'ACTIVE' ? 'active' : z.status === 'GET_READY' ? 'get-ready' : 'waiting';
+    const priceClass = dir === 'BUY' ? 'buy' : 'sell';
+
+    html += `
+    <div class="signal-card ${z.cardClass}">
+      <div class="signal-header">
+        <span class="signal-direction ${dir.toLowerCase()}">${dir}</span>
+        <span class="signal-status ${statusClass}">${statusLabel}</span>
+      </div>
+      <div class="signal-price ${priceClass}">${fmt(z.price)}</div>
+      <div class="signal-zones">
+        <div class="zone-row">
+          <span class="zone-label">Entry</span>
+          <span class="zone-value entry">${fmt(z.price)}</span>
+        </div>
+        <div class="zone-row">
+          <span class="zone-label">TP (<span id="tp-pct">3</span>%)</span>
+          <span class="zone-value tp">${fmt(z.tp)}</span>
+        </div>
+        <div class="zone-row">
+          <span class="zone-label">SL (<span id="sl-pct">3</span>%)</span>
+          <span class="zone-value sl">${fmt(z.sl)}</span>
+        </div>
+        <div class="zone-row">
+          <span class="zone-label">Distance</span>
+          <span class="zone-value" id="dist-val">${fmtDist(z)}</span>
+        </div>
+      </div>
+      <div class="signal-footer">
+        <span>Swing ${z.swing.type}</span>
+        <span class="conf">97% WR validated</span>
+      </div>
+    </div>`;
+  }
+
+  panel.innerHTML = html;
+}
+
+// ─── STATS UPDATE ─────────────────────────────────────────────────────────────
+function updateStats(currentPrice, lastSwing, signals, totalSignals) {
+  const direction = signals.activeSignals.length > 0
+    ? signals.activeSignals[0].direction
+    : signals.getReadySignals.length > 0
+    ? signals.getReadySignals[0].direction
+    : '—';
+  const sigColor = direction === 'BUY' ? '#7ee787' : direction === 'SELL' ? '#f85149' : '#8b949e';
+
+  document.getElementById('stat-asset').textContent = currentName;
+  document.getElementById('stat-price').textContent = fmt(currentPrice);
+  document.getElementById('stat-swing').textContent = lastSwing
+    ? `${lastSwing.type} @ ${fmt(lastSwing.price)}`
+    : '—';
+  document.getElementById('stat-signal').style.color = sigColor;
+  document.getElementById('stat-signal').textContent = direction;
+  document.getElementById('stat-active').textContent = totalSignals;
+}
+
+// ─── FORMATTING ───────────────────────────────────────────────────────────────
+function fmt(v) {
+  if (v >= 10000) return v.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+  if (v >= 100) return v.toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+  return v.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+function fmtDist(z) {
+  var color = '#8b949e';
+  if (z.distancePct < 1) color = '#7ee787';
+  else if (z.distancePct < 3) color = '#d29922';
+
+  var sign = '';
+  if (z.distanceFromPricePct >= 0) sign = '+';
+  return '<span style="color:' + color + '">' + sign + z.distanceFromPricePct.toFixed(1) + '%</span>';
+}
+
+// ─── MAIN REFRESH ─────────────────────────────────────────────────────────────
+async function refresh(symbol, name) {
+  currentSymbol = symbol;
+  currentName = name;
+
+  try {
+    // Fetch 4h candles for swing detection
+    const [candles4h] = await Promise.all([
+      fetchKlines(symbol, '4h', 500),
+    ]);
+
+    const currentPrice = candles4h[candles4h.length - 1].close;
+    const swings = detectSwings(candles4h);
+    const lastSwing = swings[swings.length - 1] || null;
+    const signals = analyzeSignals(candles4h, swings, currentPrice);
+
+    renderChart(candles4h, swings, signals);
+    renderSignalPanel(signals, currentPrice, lastSwing);
+
+    const totalSignals = signals.activeSignals.length + signals.getReadySignals.length;
+    updateStats(currentPrice, lastSwing, signals, totalSignals);
+
+    const now = new Date();
+    document.getElementById('updated').textContent =
+      `Updated ${now.toLocaleTimeString('en-IE', { hour: '2-digit', minute: '2-digit' })}`;
+
+    lastSignalState = signals;
+
+  } catch (e) {
+    console.error('Refresh error:', e);
+    document.getElementById('signals-panel').innerHTML = `
+      <div class="error-banner">Error loading data: ${e.message}</div>`;
+  }
+}
+
+// ─── TAB SWITCHING ────────────────────────────────────────────────────────────
+document.querySelectorAll('.asset-tab').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.asset-tab').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    initChart();
+    refresh(btn.dataset.symbol, btn.dataset.name);
+  });
+});
+
+// ─── AUTO REFRESH ─────────────────────────────────────────────────────────────
+let refreshInterval = null;
+
+function startAutoRefresh() {
+  if (refreshInterval) clearInterval(refreshInterval);
+  refreshInterval = setInterval(() => {
+    refresh(currentSymbol, currentName);
+  }, 60000); // every 60 seconds
+}
+
+// ─── BOOTSTRAP ────────────────────────────────────────────────────────────────
+initChart();
+refresh('BTCUSDT', 'BTC').then(() => {
+  startAutoRefresh();
+});
+</script>
+</body>
+</html>

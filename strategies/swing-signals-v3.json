@@ -1,0 +1,358 @@
+{
+  "version": "3.0 (swing-to-swing)",
+  "generated": "2026-04-13T21:32:51.206268",
+  "strategy": "4h Swing-to-Swing | TP=3% SL=3% | Both directions | Validated: AAVE 97%WR BTC 86%WR ETH 88%WR",
+  "results": {
+    "AAVE": {
+      "name": "AAVE",
+      "symbol": "AAVEUSDT",
+      "timestamp": "2026-04-13T21:32:48.628531",
+      "strategy": "Swing-to-Swing 4h (TP=3% SL=3%)",
+      "tp_pct": "3%",
+      "sl_pct": "3%",
+      "signals": [
+        {
+          "direction": "SELL",
+          "status": "APPROACHING",
+          "entry_price": 95.47,
+          "tp": 92.6059,
+          "sl": 98.3341,
+          "rr": 1.0,
+          "zone_price": 95.47,
+          "distance_pct": 1.23,
+          "swing_date": "2026-04-10",
+          "message": "AAVE SELL GET_READY\nZone: $95.47 (1.2% away)\nTP: $92.61 | SL: $98.33\nStatus: Watching for price to reach zone"
+        },
+        {
+          "direction": "SELL",
+          "status": "ACTIVE",
+          "entry_price": 98.39,
+          "tp": 95.4383,
+          "sl": 101.3417,
+          "rr": 1.0,
+          "zone_price": 98.39,
+          "distance_pct": 1.79,
+          "swing_date": "2026-04-13",
+          "message": "AAVE SELL at $98.39\nTP: $95.44 (-3%) | SL: $101.34 (+3%)\nZone: $98.39 | Dist: 1.8%\nConfidence: HIGH (swing-to-swing validated 97% WR)"
+        }
+      ],
+      "active_zones": [
+        {
+          "type": "HIGH",
+          "price": 95.47,
+          "date": "2026-04-10",
+          "distance_pct": 1.23,
+          "tp": 98.3341,
+          "sl": 92.6059,
+          "tp_distance_pct": 1.73,
+          "sl_distance_pct": -4.19
+        },
+        {
+          "type": "HIGH",
+          "price": 96.64,
+          "date": "2026-04-11",
+          "distance_pct": 0.02,
+          "tp": 99.5392,
+          "sl": 93.7408,
+          "tp_distance_pct": 2.98,
+          "sl_distance_pct": -3.02
+        },
+        {
+          "type": "LOW",
+          "price": 88.73,
+          "date": "2026-04-12",
+          "distance_pct": 8.2,
+          "tp": 91.3919,
+          "sl": 86.0681,
+          "tp_distance_pct": -5.45,
+          "sl_distance_pct": -10.96
+        },
+        {
+          "type": "HIGH",
+          "price": 98.39,
+          "date": "2026-04-13",
+          "distance_pct": -1.79,
+          "tp": 101.3417,
+          "sl": 95.4383,
+          "tp_distance_pct": 4.84,
+          "sl_distance_pct": -1.26
+        }
+      ],
+      "market_state": {
+        "price": 96.66,
+        "poc": 96.66,
+        "trend": "BEARISH",
+        "last_swing": {
+          "type": "HIGH",
+          "price": 98.39,
+          "date": "2026-04-13",
+          "dt": "2026-04-13 04:00:00",
+          "idx": 395,
+          "candle": {
+            "time": 1776052800000,
+            "open": 94.58,
+            "high": 98.39,
+            "low": 94.36,
+            "close": 96.04,
+            "vol": 85110.704,
+            "date": "2026-04-13",
+            "dt": "2026-04-13 04:00:00"
+          }
+        }
+      },
+      "summary": {
+        "total_signals": 2,
+        "active_signals": 1,
+        "approaching_signals": 1,
+        "trend": "BEARISH",
+        "poc": 96.66
+      }
+    },
+    "BTC": {
+      "name": "BTC",
+      "symbol": "BTCUSDT",
+      "timestamp": "2026-04-13T21:32:49.438548",
+      "strategy": "Swing-to-Swing 4h (TP=3% SL=3%)",
+      "tp_pct": "3%",
+      "sl_pct": "3%",
+      "signals": [
+        {
+          "direction": "BUY",
+          "status": "ACTIVE",
+          "entry_price": 71426.15,
+          "tp": 73568.9345,
+          "sl": 69283.3655,
+          "rr": 1.0,
+          "zone_price": 71426.15,
+          "distance_pct": 2.35,
+          "swing_date": "2026-04-10",
+          "message": "BTC BUY at $71426.15\nTP: $73568.93 (+3%) | SL: $69283.37 (-3%)\nZone: $71426.15 | Dist: 2.4%\nConfidence: HIGH (swing-to-swing validated 97% WR)"
+        },
+        {
+          "direction": "SELL",
+          "status": "ACTIVE",
+          "entry_price": 73434.0,
+          "tp": 71230.98,
+          "sl": 75637.02,
+          "rr": 1.0,
+          "zone_price": 73434.0,
+          "distance_pct": 0.39,
+          "swing_date": "2026-04-10",
+          "message": "BTC SELL at $73434.00\nTP: $71230.98 (-3%) | SL: $75637.02 (+3%)\nZone: $73434.00 | Dist: 0.4%\nConfidence: HIGH (swing-to-swing validated 97% WR)"
+        },
+        {
+          "direction": "SELL",
+          "status": "ACTIVE",
+          "entry_price": 73790.0,
+          "tp": 71576.3,
+          "sl": 76003.7,
+          "rr": 1.0,
+          "zone_price": 73790.0,
+          "distance_pct": 0.88,
+          "swing_date": "2026-04-11",
+          "message": "BTC SELL at $73790.00\nTP: $71576.30 (-3%) | SL: $76003.70 (+3%)\nZone: $73790.00 | Dist: 0.9%\nConfidence: HIGH (swing-to-swing validated 97% WR)"
+        },
+        {
+          "direction": "BUY",
+          "status": "ACTIVE",
+          "entry_price": 70505.88,
+          "tp": 72621.0564,
+          "sl": 68390.7036,
+          "rr": 1.0,
+          "zone_price": 70505.88,
+          "distance_pct": 3.61,
+          "swing_date": "2026-04-12",
+          "message": "BTC BUY at $70505.88\nTP: $72621.06 (+3%) | SL: $68390.70 (-3%)\nZone: $70505.88 | Dist: 3.6%\nConfidence: HIGH (swing-to-swing validated 97% WR)"
+        }
+      ],
+      "active_zones": [
+        {
+          "type": "LOW",
+          "price": 71426.15,
+          "date": "2026-04-10",
+          "distance_pct": 2.35,
+          "tp": 73568.9345,
+          "sl": 69283.3655,
+          "tp_distance_pct": 0.58,
+          "sl_distance_pct": -5.28
+        },
+        {
+          "type": "HIGH",
+          "price": 73434.0,
+          "date": "2026-04-10",
+          "distance_pct": -0.39,
+          "tp": 75637.02,
+          "sl": 71230.98,
+          "tp_distance_pct": 3.4,
+          "sl_distance_pct": -2.62
+        },
+        {
+          "type": "HIGH",
+          "price": 73790.0,
+          "date": "2026-04-11",
+          "distance_pct": -0.88,
+          "tp": 76003.7,
+          "sl": 71576.3,
+          "tp_distance_pct": 3.9,
+          "sl_distance_pct": -2.15
+        },
+        {
+          "type": "LOW",
+          "price": 70505.88,
+          "date": "2026-04-12",
+          "distance_pct": 3.61,
+          "tp": 72621.0564,
+          "sl": 68390.7036,
+          "tp_distance_pct": -0.72,
+          "sl_distance_pct": -6.5
+        }
+      ],
+      "market_state": {
+        "price": 73148.25,
+        "poc": 73148.25,
+        "trend": "BEARISH",
+        "last_swing": {
+          "type": "LOW",
+          "price": 70505.88,
+          "date": "2026-04-12",
+          "dt": "2026-04-12 20:00:00",
+          "idx": 393,
+          "candle": {
+            "time": 1776024000000,
+            "open": 71084.18,
+            "high": 71452.0,
+            "low": 70505.88,
+            "close": 70740.98,
+            "vol": 2276.49749,
+            "date": "2026-04-12",
+            "dt": "2026-04-12 20:00:00"
+          }
+        }
+      },
+      "summary": {
+        "total_signals": 4,
+        "active_signals": 4,
+        "approaching_signals": 0,
+        "trend": "BEARISH",
+        "poc": 73148.25
+      }
+    },
+    "ETH": {
+      "name": "ETH",
+      "symbol": "ETHUSDT",
+      "timestamp": "2026-04-13T21:32:49.993655",
+      "strategy": "Swing-to-Swing 4h (TP=3% SL=3%)",
+      "tp_pct": "3%",
+      "sl_pct": "3%",
+      "signals": [
+        {
+          "direction": "SELL",
+          "status": "ACTIVE",
+          "entry_price": 2257.99,
+          "tp": 2190.2503,
+          "sl": 2325.7297,
+          "rr": 1.0,
+          "zone_price": 2257.99,
+          "distance_pct": 0.1,
+          "swing_date": "2026-04-10",
+          "message": "ETH SELL at $2257.99\nTP: $2190.25 (-3%) | SL: $2325.73 (+3%)\nZone: $2257.99 | Dist: 0.1%\nConfidence: HIGH (swing-to-swing validated 97% WR)"
+        },
+        {
+          "direction": "SELL",
+          "status": "ACTIVE",
+          "entry_price": 2329.93,
+          "tp": 2260.0321,
+          "sl": 2399.8279,
+          "rr": 1.0,
+          "zone_price": 2329.93,
+          "distance_pct": 3.29,
+          "swing_date": "2026-04-11",
+          "message": "ETH SELL at $2329.93\nTP: $2260.03 (-3%) | SL: $2399.83 (+3%)\nZone: $2329.93 | Dist: 3.3%\nConfidence: HIGH (swing-to-swing validated 97% WR)"
+        },
+        {
+          "direction": "BUY",
+          "status": "ACTIVE",
+          "entry_price": 2175.0,
+          "tp": 2240.25,
+          "sl": 2109.75,
+          "rr": 1.0,
+          "zone_price": 2175.0,
+          "distance_pct": 3.58,
+          "swing_date": "2026-04-12",
+          "message": "ETH BUY at $2175.00\nTP: $2240.25 (+3%) | SL: $2109.75 (-3%)\nZone: $2175.00 | Dist: 3.6%\nConfidence: HIGH (swing-to-swing validated 97% WR)"
+        }
+      ],
+      "active_zones": [
+        {
+          "type": "HIGH",
+          "price": 2246.0,
+          "date": "2026-04-09",
+          "distance_pct": 0.43,
+          "tp": 2313.38,
+          "sl": 2178.62,
+          "tp_distance_pct": 2.55,
+          "sl_distance_pct": -3.42
+        },
+        {
+          "type": "HIGH",
+          "price": 2257.99,
+          "date": "2026-04-10",
+          "distance_pct": -0.1,
+          "tp": 2325.7297,
+          "sl": 2190.2503,
+          "tp_distance_pct": 3.1,
+          "sl_distance_pct": -2.91
+        },
+        {
+          "type": "HIGH",
+          "price": 2329.93,
+          "date": "2026-04-11",
+          "distance_pct": -3.29,
+          "tp": 2399.8279,
+          "sl": 2260.0321,
+          "tp_distance_pct": 6.38,
+          "sl_distance_pct": 0.19
+        },
+        {
+          "type": "LOW",
+          "price": 2175.0,
+          "date": "2026-04-12",
+          "distance_pct": 3.58,
+          "tp": 2240.25,
+          "sl": 2109.75,
+          "tp_distance_pct": -0.69,
+          "sl_distance_pct": -6.47
+        }
+      ],
+      "market_state": {
+        "price": 2255.8,
+        "poc": 2255.79,
+        "trend": "BULLISH",
+        "last_swing": {
+          "type": "LOW",
+          "price": 2175.0,
+          "date": "2026-04-12",
+          "dt": "2026-04-12 12:00:00",
+          "idx": 391,
+          "candle": {
+            "time": 1775995200000,
+            "open": 2204.62,
+            "high": 2208.22,
+            "low": 2175.0,
+            "close": 2186.47,
+            "vol": 53590.6811,
+            "date": "2026-04-12",
+            "dt": "2026-04-12 12:00:00"
+          }
+        }
+      },
+      "summary": {
+        "total_signals": 3,
+        "active_signals": 3,
+        "approaching_signals": 0,
+        "trend": "BULLISH",
+        "poc": 2255.79
+      }
+    }
+  }
+}

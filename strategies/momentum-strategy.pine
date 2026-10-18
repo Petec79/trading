@@ -1,0 +1,513 @@
+//@version=6
+//
+// Momentum Strategy Indicator — TradingView Pine Script v6
+// Based on @spicyofc "Momentum Trading Strategy Guide"
+//
+// ═══════════════════════════════════════════════════════════════
+// WHAT THIS INDICATOR DOES
+// ═══════════════════════════════════════════════════════════════
+// Identifies optimal Momentum trade setups on any timeframe.
+// Aims to find conditions where you can "buy high and sell higher"
+// by trading breakouts of key swing levels WITH:
+//   1. Grindy approach into the level (small candles, NOT fast spikes)
+//   2. Increasing volume over time
+//   3. At least 2 hours of staircase structure (HH+HL or LH+LL)
+//
+// ═══════════════════════════════════════════════════════════════
+// HOW TO USE
+// ═══════════════════════════════════════════════════════════════
+// 1. Paste into Pine Editor, Save, Add to chart
+//
+// 2. SETUP ALERTS (one per condition):
+//    - Momentum Long Setup  → momentum_long_signal
+//    - Momentum Short Setup → momentum_short_signal
+//    - Ideal Entry Zone    → entry_zone_long / entry_zone_short
+//
+// 3. TRADING RULES (full rules in PDF Ch.4-6):
+//    ENTRY: After 1 candle closes through swing high/low
+//    STOP:  At the relevant swing low (long) / swing high (short)
+//    TARGET: Next resistance level (or +1R at ATH)
+//
+//    Entry trigger:
+//    • Distance < 3%: place LIMIT ORDER on broken level
+//    • Distance > 3%: MARKET ORDER immediately after trigger
+//
+// 4. QUALITY SCORING:
+//    3/3 = All stars align → wider R target justified
+//    2/3 = Good trade → conservative 1R target
+//    0-1/3 = AVOID → not a momentum regime
+//
+// ═══════════════════════════════════════════════════════════════
+
+indicator("Momentum Strategy [spicyofc]", overlay=true, max_lines_count=500, max_labels_count=100)
+
+// ─── USER INPUTS ─────────────────────────────────────────────
+group_momentum = "Momentum Criteria"
+swingStrength  = input.int(1,    "Swing Lookback (candles)", minval=2, maxval=10, group=group_momentum)
+staircaseHours = input.float(2,  "Min Staircase Duration (hours)", minval=0.5, maxval=24, group=group_momentum)
+volLookback    = input.int(20,   "Volume MA Lookback", minval=5, maxval=100, group=group_momentum)
+volThreshold   = input.float(1.1,"Volume Increase Multiplier", minval=1.0, maxval=3.0, step=0.05, group=group_momentum)
+volConfirmBars = input.int(5,   "Volume Bars Required Above MA", minval=1, maxval=20, group=group_momentum)
+
+group_levels   = "Level Settings"
+showSwingPivots = input.bool(true,  "Show Swing Highs/Lows", group=group_levels)
+showZones      = input.bool(true,  "Show Entry Zones", group=group_levels)
+showQuality    = input.bool(true,  "Show Quality Score", group=group_levels)
+showAlerts     = input.bool(true,  "Enable Alert Messages", group=group_levels)
+labelSize      = input.string("Small", "Label Size", options=["Tiny","Small","Normal"], group=group_levels)
+
+group_colors = "Colors"
+cLong          = input.color(color.green,  "Long Color", group=group_colors)
+cShort         = input.color(color.red,    "Short Color", group=group_colors)
+cNeutral       = input.color(color.gray,   "Neutral Color", group=group_colors)
+cStairUp       = input.color(color.new(#00FF00, 80), "Staircase Up", group=group_colors)
+cStairDn       = input.color(color.new(#FF4444, 80), "Staircase Down", group=group_colors)
+cGetReady      = color.orange
+
+// ═══════════════════════════════════════════════════════════════
+// SWING HIGH / LOW DETECTION
+// PDF Ch.6: "A swing point (high or low) requires at least 3 candles
+// to be formed. Swing highs is when the 2nd candle has the highest
+// extreme and a swing Low is when the 2nd candle has the lowest extreme."
+// strength=1 means the current candle is the 2nd of 3 (middle = extreme)
+// ═══════════════════════════════════════════════════════════════
+float leftHighMax  = ta.highest(high,  swingStrength)
+float rightHighMax = ta.highest(high[1], swingStrength)
+float leftLowMin   = ta.lowest(low,   swingStrength)
+float rightLowMin  = ta.lowest(low[1],  swingStrength)
+
+bool isSH = (high == leftHighMax) and (high == rightHighMax) and (high > close)
+bool isSL = (low  == leftLowMin)  and (low  == rightLowMin)  and (low  < close)
+
+// Track last confirmed swings
+var float lastSH = na
+var float lastSL = na
+var int   barSH  = na
+var int   barSL  = na
+var float prevSH = na
+var float prevSL = na
+
+if isSH
+    prevSH := lastSH
+    lastSH := high
+    barSH  := bar_index
+
+if isSL
+    prevSL := lastSL
+    lastSL := low
+    barSL  := bar_index
+
+// Rolling history of swings (last 6) — use array.new instead of invalid var float[N] syntax
+var float[] shPrices = array.new<float>(6, na)
+var float[] slPrices = array.new<float>(6, na)
+var int[]   shBars    = array.new<int>(6, 0)
+var int[]   slBars    = array.new<int>(6, 0)
+var int swingCount = 0
+
+if isSH
+    for i = 5 to 1 by 1
+        array.set(shPrices, i, array.get(shPrices, i - 1))
+        array.set(shBars, i, array.get(shBars, i - 1))
+    array.set(shPrices, 0, high)
+    array.set(shBars, 0, bar_index)
+    swingCount := math.min(swingCount + 1, 6)
+
+if isSL
+    for i = 5 to 1 by 1
+        array.set(slPrices, i, array.get(slPrices, i - 1))
+        array.set(slBars, i, array.get(slBars, i - 1))
+    array.set(slPrices, 0, low)
+    array.set(slBars, 0, bar_index)
+    swingCount := math.min(swingCount + 1, 6)
+
+// ═══════════════════════════════════════════════════════════════
+// VOLUME ANALYSIS
+// PDF Ch.4 Variable #2: "Increasing Volume over Time"
+// Compare recent window avg vs prior window avg — NOT static MA × threshold
+// ═══════════════════════════════════════════════════════════════
+float volMA      = ta.sma(volume, volLookback)
+
+// Recent window avg vs prior window avg (increasing = trending up)
+int volWindow = math.max(5, volLookback / 4)
+float volRecent = ta.sma(volume, volWindow)
+float volPrior  = ta.sma(volume[volWindow], volWindow)
+bool volIncreasing = volRecent > volPrior * volThreshold
+
+// Count how many of the last N bars had increasing volume (PDF: above MA trend)
+int volConfirmCount = 0
+for i = 0 to volConfirmBars - 1 by 1
+    if volume[i] > volMA[i] * volThreshold
+        volConfirmCount += 1
+
+bool volumeRegime = volConfirmCount >= volConfirmBars
+
+// ═══════════════════════════════════════════════════════════════
+// "GRINDY STAIRCASE" DETECTION — PDF Ch.4 Variable #1
+//
+// Two SEPARATE criteria:
+//   Criterion A: GRIND into level — small/medium candles approaching (NOT fast spike)
+//   Criterion B: 2h STAIRCASE structure — HH+HL (long) OR LH+LL (short)
+//
+// A staircase has:
+//   Long (uptrend):  successive Higher Highs + Higher Lows
+//   Short (downtrend): successive Lower Highs + Lower Lows
+//
+// NOTE: Original script had isDowntrendStaircase checking risingHighs — WRONG.
+// For LH+LL (downtrend staircase), highs must be FALLING (lower highs).
+// ═══════════════════════════════════════════════════════════════
+int staircaseBars = int(staircaseHours * 60 / timeframe.multiplier)
+
+bool isUptrendStaircase = false   // HH+HL — rising highs AND rising lows
+bool isDowntrendStaircase = false // LH+LL — falling highs AND falling lows
+
+// Criterion B: staircase structure check
+if swingCount >= 4
+    int maxBar = bar_index
+    int minBar = maxBar - staircaseBars
+
+    float prevLow = na
+    float prevHigh = na
+    int risingLows = 0
+    int fallingLows = 0
+    int risingHighs = 0
+    int fallingHighs = 0
+    int lowCount = 0
+    int highCount = 0
+
+    for i = 0 to 5
+        float slPrice = array.get(slPrices, i)
+        int slBar = array.get(slBars, i)
+        if not na(slPrice) and slBar >= minBar and slBar <= maxBar and slBar > 0
+            if not na(prevLow)
+                if slPrice > prevLow
+                    risingLows += 1
+                if slPrice < prevLow
+                    fallingLows += 1
+            prevLow := slPrice
+            lowCount += 1
+
+        float shPrice = array.get(shPrices, i)
+        int shBar = array.get(shBars, i)
+        if not na(shPrice) and shBar >= minBar and shBar <= maxBar and shBar > 0
+            if not na(prevHigh)
+                if shPrice > prevHigh
+                    risingHighs += 1
+                if shPrice < prevHigh
+                    fallingHighs += 1
+            prevHigh := shPrice
+            highCount += 1
+
+    // Long staircase: HH+HL = rising highs AND rising lows
+    if lowCount >= 2 and risingLows >= lowCount - 1 and highCount >= 2 and risingHighs >= highCount - 1
+        isUptrendStaircase := true
+
+    // Short staircase: LH+LL = FALLING highs AND FALLING lows (NOT rising!)
+    if lowCount >= 2 and fallingLows >= lowCount - 1 and highCount >= 2 and fallingHighs >= highCount - 1
+        isDowntrendStaircase := true
+
+// Criterion A: grind into level — price near a swing level with staircase structure
+float recentSwingHigh = ta.highest(high, math.max(1, staircaseBars / 4))
+float recentSwingLow  = ta.lowest(low,  math.max(1, staircaseBars / 4))
+
+bool grindIntoLevelUp   = isUptrendStaircase   and (close > recentSwingLow)
+bool grindIntoLevelDown = isDowntrendStaircase and (close < recentSwingHigh)
+
+// PDF Ch.8 tip: staircase is MANDATORY — criterion A alone is not enough
+// We require BOTH grind approach AND staircase for momentum entry
+
+// ═══════════════════════════════════════════════════════════════
+// ENTRY TRIGGER — 1 candle close through level (PDF Ch.6)
+// ═══════════════════════════════════════════════════════════════
+bool shBroken = not na(lastSH) and close > lastSH and close[1] <= lastSH[1]
+bool slBroken = not na(lastSL) and close < lastSL and close[1] >= lastSL[1]
+
+// Entry zone: price within 0.5% of broken level (pullback entry)
+float entryZoneDist = 0.005
+bool nearSH = not na(lastSH) and (close - lastSH) / close <= entryZoneDist and close > lastSH
+bool nearSL = not na(lastSL) and (lastSL - close) / close <= entryZoneDist and close < lastSL
+
+// ═══════════════════════════════════════════════════════════════
+// STOPLOSS LEVELS
+// ═══════════════════════════════════════════════════════════════
+float longSL  = not na(lastSL) ? lastSL : na
+float shortSL = not na(lastSH) ? lastSH : na
+
+// Distance from entry to SL
+float distToSL_pct = not na(lastSL) ? (close - lastSL) / close : na
+float distToSH_pct = not na(lastSH) ? (lastSH - close) / close : na
+
+// Entry order type
+bool useLimitLong  = not na(distToSL_pct) and distToSL_pct < 0.03
+bool useLimitShort = not na(distToSH_pct) and distToSH_pct < 0.03
+
+// ═══════════════════════════════════════════════════════════════
+// TARGET LEVELS
+// ═══════════════════════════════════════════════════════════════
+float longTP  = not na(prevSH) ? prevSH : not na(lastSH) ? lastSH * 1.02 : na
+float shortTP = not na(prevSL) ? prevSL : not na(lastSL) ? lastSL * 0.98 : na
+
+// 1R target
+float riskPct = 0.01  // 1% risk default
+float longTP1R  = not na(distToSL_pct) ? close * (1 + distToSL_pct) : na
+float shortTP1R = not na(distToSH_pct) ? close * (1 - distToSH_pct) : na
+
+// ═══════════════════════════════════════════════════════════════
+// QUALITY SCORE (PDF Ch.4: 3 variables)
+// ═══════════════════════════════════════════════════════════════
+// 1 = Grindy staircase approach (most important)
+// 2 = Volume increasing
+// 3 = At least 2 hours of staircase
+
+int qualityScore = 0
+
+// Criterion A: grind into level (separate from staircase structure)
+bool criteria1 = grindIntoLevelUp or grindIntoLevelDown
+// Criterion B: volume increasing over time
+bool criteria2 = volumeRegime or volIncreasing
+// Criterion C: at least 2h of staircase structure (HH+HL or LH+LL)
+bool criteria3 = swingCount >= 3  // at least 3 swings in recent history
+
+if criteria1
+    qualityScore += 1
+if criteria2
+    qualityScore += 1
+if criteria3
+    qualityScore += 1
+
+// ═══════════════════════════════════════════════════════════════
+// SIGNAL STATES
+// ═══════════════════════════════════════════════════════════════
+// GET_READY: approaching a level with staircase structure
+bool getReadyLong  = grindIntoLevelUp and not shBroken and not na(lastSH)
+bool getReadyShort = grindIntoLevelDown and not slBroken and not na(lastSL)
+
+// ACTIVE ENTRY TRIGGER: 1 candle closed through the level
+// PDF Ch.8 tip: staircase is MANDATORY — no staircase = do NOT take trade
+bool momentumLong  = shBroken and grindIntoLevelUp and (volIncreasing or volumeRegime)
+bool momentumShort = slBroken and grindIntoLevelDown and (volIncreasing or volumeRegime)
+
+// ═══════════════════════════════════════════════════════════════
+// ALERTS
+// ═══════════════════════════════════════════════════════════════
+string scoreMsg(int s) =>
+    s == 3 ? "3/3 — ALL ALIGNED — ambitious R target OK" :
+    s == 2 ? "2/3 — Good trade — play it safe, 1R target" :
+    "0-1/3 — AVOID — not a momentum regime"
+
+if showAlerts
+    if getReadyLong
+        alert("GET_READY LONG: Price grinding into SH zone @ " + str.tostring(lastSH, "#.##")
+         + " | Vol: " + (volumeRegime ? "YES" : "NO")
+         + " | Stairs: " + (grindIntoLevelUp ? "YES" : "NO")
+         + " | Score: " + scoreMsg(qualityScore + 1), alert.freq_once_per_bar)
+    if getReadyShort
+        alert("GET_READY SHORT: Price grinding into SL zone @ " + str.tostring(lastSL, "#.##")
+         + " | Vol: " + (volumeRegime ? "YES" : "NO")
+         + " | Stairs: " + (grindIntoLevelDown ? "YES" : "NO")
+         + " | Score: " + scoreMsg(qualityScore + 1), alert.freq_once_per_bar)
+    if momentumLong
+        alert("MOMENTUM LONG @ " + str.tostring(lastSH, "#.##")
+         + " | SL: " + str.tostring(longSL, "#.##")
+         + " | TP1R: " + str.tostring(longTP1R, "#.##")
+         + " | Score: " + scoreMsg(qualityScore)
+         + " | " + (useLimitLong ? "LIMIT ORDER" : "MARKET ORDER"), alert.freq_once_per_bar)
+    if momentumShort
+        alert("MOMENTUM SHORT @ " + str.tostring(lastSL, "#.##")
+         + " | SL: " + str.tostring(shortSL, "#.##")
+         + " | TP1R: " + str.tostring(shortTP1R, "#.##")
+         + " | Score: " + scoreMsg(qualityScore)
+         + " | " + (useLimitShort ? "LIMIT ORDER" : "MARKET ORDER"), alert.freq_once_per_bar)
+
+// ═══════════════════════════════════════════════════════════════
+// PLOTTING
+// ═══════════════════════════════════════════════════════════════
+// Swing pivot markers
+plotshape(showSwingPivots and isSH, title="Swing High",
+     location=location.abovebar, style=shape.triangledown,
+     color=color.new(cShort, 30), size=size.tiny)
+plotshape(showSwingPivots and isSL, title="Swing Low",
+     location=location.belowbar, style=shape.triangleup,
+     color=color.new(cLong, 30), size=size.tiny)
+
+// Current price line
+plot(close, title="Price", color=cNeutral, linewidth=1, style=plot.style_line)
+
+// Staircase background tint
+bgcolor(grindIntoLevelUp   ? color.new(#00FF00, 92) : na, title="Uptrend Staircase BG")
+bgcolor(grindIntoLevelDown ? color.new(#FF4444, 92) : na, title="Downtrend Staircase BG")
+
+// GET_READY zones
+plotchar(getReadyLong,  title="GET_READY Long",  char="◆", location=location.belowbar, color=cGetReady)
+plotchar(getReadyShort, title="GET_READY Short", char="◆", location=location.abovebar, color=cGetReady)
+
+// ACTIVE entry triggers
+plotchar(momentumLong,  title="Momentum Long",  char="►", location=location.belowbar, color=cLong)
+plotchar(momentumShort, title="Momentum Short", char="►", location=location.abovebar, color=cShort)
+
+// Entry zone lines — plot() must be at top level in v6 (not inside if blocks)
+// Use conditional values instead of conditional plots
+float plotSHLevel = showZones and not na(lastSH) ? lastSH : na
+float plotSLLevel = showZones and not na(lastSL) ? lastSL : na
+float plotLongSL  = showZones and not na(longSL) and momentumLong ? longSL : na
+float plotShortSL = showZones and not na(shortSL) and momentumShort ? shortSL : na
+float plotLongTP  = showZones and not na(longTP1R) and momentumLong ? longTP1R : na
+float plotShortTP = showZones and not na(shortTP1R) and momentumShort ? shortTP1R : na
+
+plot(plotSHLevel, title="Swing High Level",
+     color=color.new(cShort, 50), linewidth=2,
+     style=plot.style_linebr, offset=0)
+plot(plotSLLevel, title="Swing Low Level",
+     color=color.new(cLong, 50), linewidth=2,
+     style=plot.style_linebr, offset=0)
+plot(plotLongSL, title="Long SL",
+     color=color.new(cShort, 60), linewidth=2,
+     style=plot.style_linebr, offset=0)
+plot(plotShortSL, title="Short SL",
+     color=color.new(cLong, 60), linewidth=2,
+     style=plot.style_linebr, offset=0)
+plot(plotLongTP, title="Long TP (1R)",
+     color=color.new(cLong, 50), linewidth=1,
+     style=plot.style_linebr, offset=0)
+plot(plotShortTP, title="Short TP (1R)",
+     color=color.new(cShort, 50), linewidth=1,
+     style=plot.style_linebr, offset=0)
+
+// Labels for swing levels
+if showZones and barstate.islast
+    if not na(lastSH)
+        label.new(barSH, lastSH,
+             text="SH " + str.tostring(lastSH, "#.##"),
+             color=cShort, textcolor=color.white,
+             size=size.tiny, style=label.style_label_down,
+             yloc=yloc.abovebar)
+    if not na(lastSL)
+        label.new(barSL, lastSL,
+             text="SL " + str.tostring(lastSL, "#.##"),
+             color=cLong, textcolor=color.white,
+             size=size.tiny, style=label.style_label_up,
+             yloc=yloc.belowbar)
+    if not na(longSL) and momentumLong
+        label.new(bar_index - 5, longSL,
+             text="SL " + str.tostring(longSL, "#.##"),
+             color=cShort, textcolor=color.white,
+             size=size.tiny, style=label.style_label_up)
+    if not na(shortSL) and momentumShort
+        label.new(bar_index - 5, shortSL,
+             text="SL " + str.tostring(shortSL, "#.##"),
+             color=cLong, textcolor=color.white,
+             size=size.tiny, style=label.style_label_down)
+
+// ═══════════════════════════════════════════════════════════════
+// QUALITY SCORE TABLE
+// ═══════════════════════════════════════════════════════════════
+var table tbl = table.new(position.top_right, 2, 8,
+     bgcolor=color.new(color.black, 90), frame_color=color.gray, frame_width=1)
+
+if showQuality and barstate.islast
+    // Header
+    table.cell(tbl, 0, 0, "Momentum Strategy", text_color=color.white, text_size=size.small)
+    table.cell(tbl, 1, 0, "spicyofc rules",   text_color=color.gray, text_size=size.small)
+
+    // Quality score
+    string qStr = str.tostring(qualityScore) + "/3"
+    color qCol  = qualityScore == 3 ? cLong : qualityScore == 2 ? cGetReady : color.gray
+    table.cell(tbl, 0, 1, "Quality Score", text_color=color.gray, text_size=size.small)
+    table.cell(tbl, 1, 1, qStr, text_color=qCol, text_size=size.small)
+
+    // Criteria breakdown
+    table.cell(tbl, 0, 2, "Staircase",   text_color=color.gray, text_size=size.small)
+    table.cell(tbl, 1, 2, criteria1 ? "✓" : "✗", text_color=criteria1 ? cLong : color.gray, text_size=size.small)
+
+    table.cell(tbl, 0, 3, "Volume ↑",   text_color=color.gray, text_size=size.small)
+    table.cell(tbl, 1, 3, criteria2 ? "✓" : "✗", text_color=criteria2 ? cLong : color.gray, text_size=size.small)
+
+    table.cell(tbl, 0, 4, "Swing Hist",  text_color=color.gray, text_size=size.small)
+    table.cell(tbl, 1, 4, criteria3 ? "✓" : "✗", text_color=criteria3 ? cLong : color.gray, text_size=size.small)
+
+    // Entry signal
+    string sigStr = momentumLong ? "LONG TRIGGER" :
+                    momentumShort ? "SHORT TRIGGER" :
+                    getReadyLong  ? "GET_READY LONG" :
+                    getReadyShort ? "GET_READY SHORT" : "—"
+    color  sigCol = momentumLong or getReadyLong  ? cLong :
+                    momentumShort or getReadyShort ? cShort : color.gray
+    table.cell(tbl, 0, 5, "Signal",      text_color=color.gray, text_size=size.small)
+    table.cell(tbl, 1, 5, sigStr, text_color=sigCol, text_size=size.small)
+
+    // Entry type
+    string entType = useLimitLong ? "LIMIT LONG" :
+                     useLimitShort ? "LIMIT SHORT" :
+                     momentumLong or momentumShort ? "MARKET" : "—"
+    table.cell(tbl, 0, 6, "Entry Type", text_color=color.gray, text_size=size.small)
+    table.cell(tbl, 1, 6, entType, text_color=color.gray, text_size=size.small)
+
+    // Recommendation
+    string rec = qualityScore >= 2 ? "1R target" : "AVOID"
+    table.cell(tbl, 0, 7, "→ Target", text_color=color.gray, text_size=size.small)
+    table.cell(tbl, 1, 7, rec, text_color=qualityScore >= 2 ? cLong : color.gray, text_size=size.small)
+
+// ═══════════════════════════════════════════════════════════════
+// VOLUME INDICATOR (subchart)
+// Note: with overlay=true, volume plots on the price chart.
+// Set display.none if you only want the table.
+// ═══════════════════════════════════════════════════════════════
+plot(volume, title="Volume", color=volumeRegime ? cLong : color.gray,
+     style=plot.style_histogram, histbase=0, display=display.none)
+plot(volMA * volThreshold, title="Volume Threshold",
+     color=color.new(cLong, 60), linewidth=1,
+     style=plot.style_line, display=display.none)
+plot(volMA, title="Volume MA", color=color.gray,
+     linewidth=1, style=plot.style_line, display=display.none)
+
+// ═══════════════════════════════════════════════════════════════
+// STRATEGY EXPORT (for automated trading systems / webhook alerts)
+// Use plain variable names — strategy.xxx is reserved for strategy() scripts
+// ═══════════════════════════════════════════════════════════════
+float momentumLongSignal  = momentumLong  ? 1 : 0
+float momentumShortSignal = momentumShort ? 1 : 0
+float entryZoneLong      = getReadyLong  ? lastSH : na
+float entryZoneShort     = getReadyShort ? lastSL : na
+
+plot(momentumLongSignal,  title="ML", display=display.none)
+plot(momentumShortSignal, title="MS", display=display.none)
+plot(entryZoneLong,  title="EZL", display=display.none)
+plot(entryZoneShort, title="EZS", display=display.none)
+
+// ═══════════════════════════════════════════════════════════════
+// HOW TO TRADE THIS (Summary)
+// ═══════════════════════════════════════════════════════════════
+//
+// STEP 1: IDENTIFY REGIME
+//   Look for coins on Orion Terminal / Velo sorted by:
+//   - "Top Gainers" for momentum longs
+//   - "Trade Count" for hot coins
+//   Only trade when score >= 2/3
+//
+// STEP 2: FIND THE LEVEL
+//   Use swing highs (for longs) / swing lows (for shorts)
+//   Levels: 1h, 4h, daily, weekly — bigger = better
+//
+// STEP 3: CONFIRM 3 CRITERIA
+//   ✓ Grindy approach — small/medium candles, NOT fast spike
+//   ✓ Staircase — HH+HL (long) or LH+LL (short)
+//   ✓ Volume increasing — above the threshold line
+//   ✓ At least 2h of structure — more swings = stronger
+//
+// STEP 4: ENTRY
+//   After 1 candle closes through the level:
+//   • Distance to SL < 3%  → LIMIT ORDER on broken level
+//   • Distance to SL > 3%  → MARKET ORDER immediately
+//
+// STEP 5: STOPLOSS
+//   Long:  at the relevant swing low
+//   Short: at the relevant swing high
+//
+// STEP 6: TARGET
+//   Score 3/3 → next major resistance / be ambitious
+//   Score 2/3 → play it safe, take 1R and move on
+//   Score 0-1/3 → AVOID the trade entirely
+//
+// SCALPING TIMEFRAME: Author trades 1-minute exclusively
+// HIGHER TIMEFRAMES: Works on any TF — adjust staircaseHours
+//
+// ================================================================
