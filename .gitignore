@@ -218,3 +218,19 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+
+# Midas Holdings additions (2026-10-18, Midas)
+# Never commit secrets
+.env
+.env.local
+*.env
+
+# Journal databases (large binary; kept locally only)
+*.db
+*.db-shm
+*.db-wal
+
+# OS
+.DS_Store
+Thumbs.db
