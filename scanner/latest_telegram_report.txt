@@ -1,0 +1,40 @@
+SCANNER — 2026-10-18
+═══════════════════════════════════════
+
+Bias: MIXED/MILD  (no numbers found)
+Spaghetti: CHOPPY RANGE — y-axis 0%
+Edge: London PM — mixed results, monitor
+
+Top Reversal SHORT (coins UP, fade the top):
+Coin            24h %  MR Score
+-----------------------------------
+Q             +43.16%     80.0 ★
+AVA           +30.25%     73.4 ★
+BTW            +5.94%     69.6 ★
+SAND           +3.28%     62.0 ★
+
+Top Reversal LONG (coins DOWN, buy the dip):
+Coin            24h %  MR Score
+-----------------------------------
+SOXL           -3.41%     61.7 ★
+ZEC            -4.09%     61.6 ★
+AGT            -1.20%     60.6 ★
+TIA            -9.02%     57.5
+NEAR           -4.94%     56.7
+WLD            -3.04%     56.5
+KORU           -2.72%     56.4
+SNDK           -2.73%     56.4
+
+Checks:
+  ✅ vol ≥ $500K/5m | trd ≥ 5K/5m | no majors
+  ⚡ fast spike → check news/BTC before entry
+  ⚠️ funding due <90min → skip that direction
+
+Bottom line: Late session — Asian flush tonight for best edge. Short Q (MR 80) — watch for extension then fade. Mixed bias — size small, strict SL.
+
+MOMENTUM SCAN — 2026-10-18
+================================
+
+No momentum setups today.
+
+Staircase rule: HH/HL for longs, LH/LS for shorts. Minimum 2h structure. Volume confirmation required.

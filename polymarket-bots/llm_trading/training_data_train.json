@@ -1,0 +1,77 @@
+[
+  {
+    "instruction": "Analyze this news and predict market direction",
+    "input": "Bitcoin surges past $85,000 amid institutional buying",
+    "output": "BUY"
+  },
+  {
+    "instruction": "Analyze this news and predict market direction",
+    "input": "Major bank announces cryptocurrency trading desk",
+    "output": "BUY"
+  },
+  {
+    "instruction": "Analyze this news and predict market direction",
+    "input": "SEC approves Bitcoin ETF",
+    "output": "BUY"
+  },
+  {
+    "instruction": "Analyze this news and predict market direction",
+    "input": "Regulatory concerns rise as Bitcoin mining energy usage increases",
+    "output": "SELL"
+  },
+  {
+    "instruction": "Analyze this news and predict market direction",
+    "input": "SEC delays Bitcoin ETF decision again",
+    "output": "SELL"
+  },
+  {
+    "instruction": "Analyze this news and predict market direction",
+    "input": "El Salvador's Bitcoin holdings now worth $1 billion",
+    "output": "BUY"
+  },
+  {
+    "instruction": "Analyze this news and predict market direction",
+    "input": "China bans cryptocurrency mining",
+    "output": "SELL"
+  },
+  {
+    "instruction": "Analyze this news and predict market direction",
+    "input": "Twitter accepts Bitcoin for tips",
+    "output": "BUY"
+  },
+  {
+    "instruction": "Analyze this news and predict market direction",
+    "input": "Major retailer accepts Bitcoin payments",
+    "output": "BUY"
+  },
+  {
+    "instruction": "Analyze this news and predict market direction",
+    "input": "Bitcoin hits all-time high",
+    "output": "HOLD"
+  },
+  {
+    "instruction": "Analyze this news and predict market direction",
+    "input": "Correction begins after ATH",
+    "output": "SELL"
+  },
+  {
+    "instruction": "Analyze this news and predict market direction",
+    "input": "Fed signals interest rate hike",
+    "output": "SELL"
+  },
+  {
+    "instruction": "Analyze this news and predict market direction",
+    "input": "Institutional investors increase Bitcoin allocation",
+    "output": "BUY"
+  },
+  {
+    "instruction": "Analyze this news and predict market direction",
+    "input": "DeFi total value locked reaches new high",
+    "output": "BUY"
+  },
+  {
+    "instruction": "Analyze this news and predict market direction",
+    "input": "Crypto exchange hacked for $100M",
+    "output": "SELL"
+  }
+]

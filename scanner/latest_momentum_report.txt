@@ -1,0 +1,24 @@
+========================================================
+  SPICY MOMENTUM SCANNER
+  2026-10-18 21:01 UTC   Velo: YES
+========================================================
+
+Coin source: Binance Top Gainers/Losers
+
+⚠️  CAUTIOUS — Score 2/3 (conservative 1R target only)
+  ~ GTC        🟢🟢⚪  ✗✓✓  NONE            SL:+8.6%
+  ~ BR         🟢🟢⚪  ✗✓✓  NONE            SL:+7.5%
+  ~ SIREN      🟢🟢⚪  ✗✓✓  NONE            SL:+1.1%
+  ~ SOLV       🟢🟢⚪  ✗✓✓  NONE            SL:+2.5%
+  ~ AGT        🟢🟢⚪  ✗✓✓  NONE            SL:+1.6%
+  ~ PYTH       🟢🟢⚪  ✗✓✓  NONE            SL:+0.7%
+
+🚫  No momentum (score 0-1/3): ARIA, ELSA, SKDD, ERA, SOXS, MAGMA, UVXY, ARC, GWEI, XMR
+
+📋  Quality Scoring:
+  🟢🟢🟢 = 3/3 — ambitious target (next resistance)
+  🟢🟢⚪ = 2/3 — conservative 1R target
+  🟢⚪⚪ or ⚪⚪⚪ = 0-1/3 — AVOID
+
+  C1=Staircase  C2=Volume↑  C3=2h+ structure
+========================================================

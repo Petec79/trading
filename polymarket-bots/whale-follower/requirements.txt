@@ -1,0 +1,7 @@
+# Whale Follower Bot — Dependencies
+# Install: pip install -r requirements.txt
+
+requests>=2.31.0
+python-dotenv>=1.0.0
+anthropic>=0.25.0        # For Claude probability estimation (optional)
+# py-clob-client>=0.20.0  # Uncomment when ready for real CLOB trading

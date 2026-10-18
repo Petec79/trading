@@ -234,3 +234,50 @@ __marimo__/
 # OS
 .DS_Store
 Thumbs.db
+
+# Midas Holdings Stage 1B additions (2026-10-18, Midas)
+# Datastores and large files
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
+*.sqlite-shm
+*.sqlite-wal
+
+# Vendored repos (poly-maker/ in polymarket/ and polymarket-bots/ is an external clone)
+**/poly-maker/
+**/.git/
+**/node_modules/
+**/data/
+
+# Build artifacts
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+dist/
+build/
+.venv/
+venv/
+
+# Heavy media
+*.mp4
+*.mp3
+*.png
+*.jpg
+*.jpeg
+
+# Secrets
+.env
+.env.local
+*.env
+credentials.json
+**/credentials.json
+wallets/
+keystore/
+id_rsa*
+id_ed25519*

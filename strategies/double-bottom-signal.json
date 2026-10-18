@@ -1,0 +1,27 @@
+{
+  "signal": {
+    "pattern": "DOUBLE_BOTTOM_BREAKOUT",
+    "version": "1.0",
+    "signal_date": "2026-04-13",
+    "left_low_date": "2026-02-12",
+    "right_low_date": "2026-03-22",
+    "days_since_right_low": 22,
+    "current_price": 73208.17,
+    "entry_price": 76000.0,
+    "stop_loss": 64252.15,
+    "tp1": 80880.33,
+    "tp2": 85760.67,
+    "risk_reward": 0.83,
+    "position_size_usd": 1293.85,
+    "position_size_pct": 12.9,
+    "risk_amount_usd": 200.0,
+    "reward_amount_usd": 166.17,
+    "rsi_2nd_low": 51.4,
+    "neckline": 76000.0,
+    "pattern_height": 9760.67
+  },
+  "pending_count": 5,
+  "current_price": 73208.17,
+  "scan_date": "2026-04-13",
+  "telegram_message": "\ud83d\udcca DOUBLE BOTTOM BREAKOUT \u2014 BTC/USDT\n\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\nPattern confirmed: 2026-02-12 \u2192 2026-03-22 (22d ago)\nRSI at 2nd low: 51.4\n\n\ud83c\udfaf Entry: $76,000.00\n\ud83d\uded1 Stop Loss: $64,252.15\n\ud83d\udccd TP1: $80,880.33\n\ud83d\udccd TP2 (full): $85,760.67\n\n\ud83d\udcd0 Neckline: $76,000.00 | Height: $9,760.67\n\u2696\ufe0f Risk/Reward: 1:0.83\n\n\ud83d\udcb0 Position: 12.9% of bankroll\n   \u2192 $1,293.85 @ $76,000.00\n   Risk: $200.00 | Reward: $166.17\n\n\ud83d\udca1 Rule: Enter when BTC closes above neckline. TP2 = full measured move.\n[D1] Binance \u00b7 1.0"
+}

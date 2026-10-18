@@ -1,0 +1,587 @@
+//@version=5
+//
+// Mean Reversion Strategy Indicator — TradingView Pine Script v5
+// Based on @spicyofc "Mean Reversion Trading Strategy Guide"
+//
+// ═══════════════════════════════════════════════════════════════
+// WHAT THIS INDICATOR DOES
+// ═══════════════════════════════════════════════════════════════
+// Identifies 3 mean reversion (reversal) setups:
+//   1. Failed Breakouts    — price in a range, bounces back inside
+//   2. Fast Spike Reversals — vertical spike fails, reverts to origin
+//   3. Partial Fill Reversals — "Top Tick" / "Bottom Tick" at exact level
+//
+// Works on 1m timeframe (author's default) but portable to any TF.
+//
+// ═══════════════════════════════════════════════════════════════
+// HOW TO USE
+// ═══════════════════════════════════════════════════════════════
+// 1. Paste into Pine Editor, Save, Add to chart
+//
+// 2. SETUP ALERTS:
+//    - Failed Breakout Long/Short → strategy.failed_long / failed_short
+//    - Fast Spike Long/Short     → strategy.spike_long / spike_short
+//    - Partial Fill Long/Short   → strategy.partial_long / partial_short
+//
+// 3. TRADING RULES (full rules in PDF Ch.5-7):
+//
+//    FAILED BREAKOUTS:
+//      Entry: 1 candle close back inside range
+//      Target: opposite side of range
+//      Stop: next S/R level OR ~1R
+//
+//    FAST SPIKE REVERSALS:
+//      Entry: after bearish break in structure (1 candle below swing low)
+//      Spike > 1.5%: MARKET order | Spike < 1.5%: LIMIT order
+//      Target: origin of the spike
+//      Stop: extreme point of the spike
+//      AVOID: news-driven spikes, BTC-correlated spikes
+//
+//    PARTIAL FILL REVERSALS:
+//      Entry: after next candle closes opposite direction (top tick confirmed)
+//      MARKET order only
+//      Target: recent swing low (long) / swing high (short)
+//      Stop: 1R equidistant from entry to target
+//
+// 4. REGIME CHECK (Easy Mode — at least 2/3 = good for reversals):
+//    ✓ Fast spike approach into level
+//    ✓ Volume decreasing or flat
+//    ✓ Sideways/ranging price action
+//
+// 5. QUALITY SCORING:
+//    3/3 = All align → wider R, aggressive
+//    2/3 = Good trade → standard 1R
+//    1/3 = Low confidence → be conservative
+//    0/3 = AVOID
+//
+// ═══════════════════════════════════════════════════════════════
+
+indicator("Mean Reversion Strategy [spicyofc]", overlay=true, max_lines_count=500, max_labels=100)
+
+// ─── USER INPUTS ─────────────────────────────────────────────
+group_rev        = "Reversal Criteria (Easy Mode)"
+rangeLookback    = input.int(20,   "Range Detection Lookback (bars)", minval=5, maxval=200, group=group_rev)
+volLookback      = input.int(20,   "Volume MA Lookback", minval=5, maxval=100, group=group_rev)
+volConfirmBars   = input.int(5,    "Volume Bars Required", minval=1, maxval=20, group=group_rev)
+spikeThreshPct  = input.float(1.5,"Spike Threshold %", minval=0.5, maxval=10.0, step=0.1, group=group_rev)
+
+group_levels     = "Level Settings"
+showSwingPivots  = input.bool(true,  "Show Swing Highs/Lows", group=group_levels)
+showZones        = input.bool(true,  "Show Entry/Exit Zones", group=group_levels)
+showQuality      = input.bool(true,  "Show Quality Score", group=group_levels)
+showAlerts      = input.bool(true,  "Enable Alert Messages", group=group_levels)
+
+group_colors
+cLong            = input.color(color.blue,   "Long Color", group=group_colors)
+cShort           = input.color(color.orange,  "Short Color", group=group_colors)
+cNeutral         = input.color(color.gray,    "Neutral Color", group=group_colors)
+cFastSpike       = input.color(color.purple,  "Fast Spike Color", group=group_colors)
+cPartialFill     = input.color(color.yellow, "Partial Fill Color", group=group_colors)
+cGetReady        = color.lime
+
+// ═══════════════════════════════════════════════════════════════
+// VOLUME ANALYSIS
+// ═══════════════════════════════════════════════════════════════
+float volMA   = ta.sma(volume, volLookback)
+bool volIncreasing = volume > volMA
+bool volDecreasing = volume < volMA
+
+// Count decreasing/flat volume bars
+int volOkCount = 0
+for i = 0 to volConfirmBars - 1 by 1
+    if not volIncreasing[i]
+        volOkCount += 1
+
+bool volumeRegime = volOkCount >= volConfirmBars  // NOT increasing = good for reversals
+
+// ═══════════════════════════════════════════════════════════════
+// SWING HIGH / LOW
+// ═══════════════════════════════════════════════════════════════
+swingStrength = 3
+
+float leftHighMax  = ta.highest(high,  swingStrength)
+float rightHighMax = ta.highest(high[1], swingStrength)
+float leftLowMin   = ta.lowest(low,   swingStrength)
+float rightLowMin  = ta.lowest(low[1],  swingStrength)
+
+bool isSH = (high == leftHighMax) and (high == rightHighMax) and (high > close)
+bool isSL = (low  == leftLowMin)  and (low  == rightLowMin)  and (low  < close)
+
+// Track swing history
+var float lastSH = na
+var float lastSL = na
+var int   barSH  = na
+var int   barSL  = na
+var float prevSH = na  // 2nd most recent
+var float prevSL = na
+var float prevPrevSH = na
+var float prevPrevSL = na
+
+if isSH
+    prevPrevSH := prevSH
+    prevSH := lastSH
+    lastSH := high
+    barSH  := bar_index
+if isSL
+    prevPrevSL := prevSL
+    prevSL := lastSL
+    lastSL := low
+    barSL  := bar_index
+
+// Rolling swing arrays (last 6)
+var float[6] shPrices = array.from(na, na, na, na, na, na)
+var float[6] slPrices = array.from(na, na, na, na, na, na)
+var int[6]   shBars  = array.from(0, 0, 0, 0, 0, 0)
+var int[6]   slBars  = array.from(0, 0, 0, 0, 0, 0)
+var int swingCount = 0
+
+if isSH
+    for i = 5 to 1 by 1
+        shPrices[i] := shPrices[i-1]
+        shBars[i]  := shBars[i-1]
+    shPrices[0] := high
+    shBars[0]   := bar_index
+    swingCount := math.min(swingCount + 1, 6)
+
+if isSL
+    for i = 5 to 1 by 1
+        slPrices[i] := slPrices[i-1]
+        slBars[i]  := slBars[i-1]
+    slPrices[0] := low
+    slBars[0]   := bar_index
+    swingCount := math.min(swingCount + 1, 6)
+
+// ═══════════════════════════════════════════════════════════════
+// RANGE DETECTION (for Failed Breakouts)
+// ═══════════════════════════════════════════════════════════════
+// Detect if price is in a sideways range:
+// recent highest high and lowest low are within a tight band
+float rangeHigh = ta.highest(high, rangeLookback)
+float rangeLow  = ta.lowest(low,  rangeLookback)
+float rangeWidth = (rangeHigh - rangeLow) / close
+
+bool inRange = rangeWidth < 0.03  // within 3% = ranging
+
+// Range high/low levels
+float rangeHighLevel = rangeHigh
+float rangeLowLevel  = rangeLow
+
+// ═══════════════════════════════════════════════════════════════
+// FAST SPIKE DETECTION
+// ═══════════════════════════════════════════════════════════════
+// A "fast spike" = steep, large move relative to recent avg
+// We detect it by comparing current candle's range to recent avg candle range
+float avgCandleRange = ta.sma(high - low, 20)
+float currentRange   = high - low
+float spikeMultiplier = currentRange / avgCandleRange
+
+bool isSpike = spikeMultiplier > 3.0 and currentRange > close * 0.01  // >3x avg range, >1% move
+
+// Spike direction
+bool spikeUp   = isSpike and close >= open
+bool spikeDown = isSpike and close <= open
+
+// Size of the spike (peak to trough)
+float spikeTop    = spikeUp   ? high  : high[1]
+float spikeBottom = spikeDown ? low   : low[1]
+float spikeSizePct = isSpike ? (spikeTop - spikeBottom) / close * 100 : 0
+
+// Origin of the spike (where it started)
+float spikeOriginUp   = spikeDown ? low  : na
+float spikeOriginDown = spikeUp   ? high : na
+
+// ═══════════════════════════════════════════════════════════════
+// FAILED BREAKOUT DETECTION
+// ═══════════════════════════════════════════════════════════════
+// Price was above range high but closed back inside
+bool failedBreakoutUp = inRange and close[1] > rangeHigh and close < rangeHigh
+bool failedBreakoutDn = inRange and close[1] < rangeLow  and close > rangeLow
+
+// After failed breakout, wait for 1 candle close back inside
+bool fbLongEntry  = failedBreakoutUp   // price failed to break up, reverting inside
+bool fbShortEntry = failedBreakoutDn   // price failed to break down, reverting inside
+
+// FB targets: opposite side of range
+float fbLongTP   = rangeHighLevel
+float fbShortTP  = rangeLowLevel
+
+// FB Stoploss: next S/R level or ~1R
+float fbLongSL   = not na(prevSL) ? prevSL : rangeLowLevel
+float fbShortSL  = not na(prevSH) ? prevSH : rangeHighLevel
+
+// ═══════════════════════════════════════════════════════════════
+// FAST SPIKE REVERSAL DETECTION
+// ═══════════════════════════════════════════════════════════════
+// After a spike up, price creates swing low, then breaks below it
+// After a spike down, price creates swing high, then breaks above it
+
+// Track spike origin bar
+var float spikeOriginPrice = na
+var int   spikeOriginBar  = na
+var bool  hasSpikeUpPending   = false
+var bool  hasSpikeDownPending = false
+var float spikeHighPoint  = na
+var float spikeLowPoint   = na
+
+if spikeUp
+    spikeHighPoint  := high
+    spikeOriginPrice := low   // origin = where spike started
+    spikeOriginBar  := bar_index
+    hasSpikeUpPending   := true
+    hasSpikeDownPending := false
+
+if spikeDown
+    spikeLowPoint   := low
+    spikeOriginPrice := high  // origin = where spike started
+    spikeOriginBar  := bar_index
+    hasSpikeDownPending := true
+    hasSpikeUpPending   := false
+
+// Bearish break in structure: 1 candle closes below swing low (after spike up)
+// Bullish break in structure: 1 candle closes above swing high (after spike down)
+bool bearishBos = hasSpikeUpPending and not na(lastSL) and close < lastSL and close[1] >= lastSL[1]
+bool bullishBos = hasSpikeDownPending and not na(lastSH) and close > lastSH and close[1] <= lastSH[1]
+
+// Spike reversal entry
+bool spikeReversalLong  = bullishBos and hasSpikeDownPending
+bool spikeReversalShort = bearishBos and hasSpikeUpPending
+
+// Spike reversal targets: origin of the spike
+float spikeRevLongTP  = not na(spikeOriginPrice) ? spikeOriginPrice : close * 0.99
+float spikeRevShortTP = not na(spikeOriginPrice) ? spikeOriginPrice : close * 1.01
+
+// Spike reversal stops: extreme of the spike
+float spikeRevLongSL  = not na(spikeHighPoint) ? spikeHighPoint : close * 0.98
+float spikeRevShortSL = not na(spikeLowPoint)  ? spikeLowPoint  : close * 1.02
+
+// Order type for spike reversal
+bool spikeUseLimit  = spikeSizePct < spikeThreshPct
+bool spikeUseMarket = spikeSizePct >= spikeThreshPct
+
+// Clear pending spike if too old (> 30 bars)
+if bar_index - spikeOriginBar > 30
+    hasSpikeUpPending   := false
+    hasSpikeDownPending := false
+
+// ═══════════════════════════════════════════════════════════════
+// PARTIAL FILL / TOP TICK DETECTION
+// ═══════════════════════════════════════════════════════════════
+// A "Top Tick" = price touches a level at EXACT same price as prior swing high
+// with higher-than-average volume
+var float lastTopTickPrice = na
+var float lastBottomTickPrice = na
+var bool  topTickConfirmed  = false
+var bool  bottomTickConfirmed = false
+
+// Detect exact price match with prior swing high
+if isSH and not na(lastSH) and not na(prevSH)
+    if math.abs(high - prevSH) < syminfo.mintick * 2  // within 2 ticks of prior SH
+        lastTopTickPrice := high
+        topTickConfirmed := true
+    else
+        topTickConfirmed := false
+
+if isSL and not na(lastSL) and not na(prevSL)
+    if math.abs(low - prevSL) < syminfo.mintick * 2  // within 2 ticks of prior SL
+        lastBottomTickPrice := low
+        bottomTickConfirmed := true
+    else
+        bottomTickConfirmed := false
+
+// Entry after top tick: next candle closes DOWN (confirms reversal)
+bool partialFillShort = topTickConfirmed and close < close[1] and close < open
+bool partialFillLong  = bottomTickConfirmed and close > close[1] and close > open
+
+// Partial fill targets and stops
+float pfLongTP  = not na(prevSL) ? prevSL : close * 0.99
+float pfShortTP = not na(prevSH) ? prevSH : close * 1.01
+float pfLongSL  = not na(lastSL) ? lastSL : close * 0.98
+float pfShortSL = not na(lastSH) ? lastSH : close * 1.02
+
+// ═══════════════════════════════════════════════════════════════
+// QUALITY SCORE (Easy Mode — Reversal Regime Strength)
+// ═══════════════════════════════════════════════════════════════
+// At least 2/3 = good reversal environment
+// 1. Fast spike approach (or ranging price action)
+// 2. Volume NOT increasing
+// 3. Sideways / in-range price action
+
+bool criteria1 = isSpike or inRange       // fast spike OR range
+bool criteria2 = volumeRegime              // NOT increasing = good
+bool criteria3 = inRange                   // sideways = ideal for reversals
+
+int qualityScore = 0
+if criteria1 then qualityScore += 1
+if criteria2 then qualityScore += 1
+if criteria3 then qualityScore += 1
+
+// ═══════════════════════════════════════════════════════════════
+// COMBINED SIGNAL STATES
+// ═══════════════════════════════════════════════════════════════
+bool getReadyLong  = inRange and not na(lastSL) and not (fbLongEntry or spikeReversalLong or partialFillLong)
+bool getReadyShort = inRange and not na(lastSH) and not (fbShortEntry or spikeReversalShort or partialFillShort)
+
+// Active entry triggers
+bool activeLong  = fbLongEntry  or spikeReversalLong  or partialFillLong
+bool activeShort = fbShortEntry or spikeReversalShort or partialFillShort
+
+// Only in a valid reversal regime
+bool revLong  = activeLong  and (criteria2 and (criteria1 or criteria3))
+bool revShort = activeShort and (criteria2 and (criteria1 or criteria3))
+
+// ═══════════════════════════════════════════════════════════════
+// WHICH SETUP TYPE?
+// ═══════════════════════════════════════════════════════════════
+string setupType = fbLongEntry or fbShortEntry ? "FAILED BREAKOUT" :
+                    spikeReversalLong or spikeReversalShort ? "FAST SPIKE REVERSAL" :
+                    partialFillLong or partialFillShort  ? "PARTIAL FILL" : "—"
+
+// ═══════════════════════════════════════════════════════════════
+// ALERTS
+// ═══════════════════════════════════════════════════════════════
+string scoreMsg(int s) =>
+    s == 3 ? "3/3 — ALL ALIGNED — go for it" :
+    s == 2 ? "2/3 — Good reversal regime" :
+    s == 1 ? "1/3 — low confidence" : "0/3 — AVOID reversal"
+
+if showAlerts
+    if getReadyLong
+        alert("GET_READY REVERSAL LONG: in range @ " + str.tostring(rangeLowLevel, "#.##")
+         + " | Vol OK: " + (volumeRegime ? "YES" : "NO")
+         + " | Score: " + scoreMsg(qualityScore), alert.freq_once_per_bar)
+
+    if getReadyShort
+        alert("GET_READY REVERSAL SHORT: in range @ " + str.tostring(rangeHighLevel, "#.##")
+         + " | Vol OK: " + (volumeRegime ? "YES" : "NO")
+         + " | Score: " + scoreMsg(qualityScore), alert.freq_once_per_bar)
+
+    if revLong
+        alert("REVERSAL LONG — " + setupType
+         + " | TP: " + str.tostring(fbLongTP, "#.##")
+         + " | SL: " + str.tostring(fbLongSL, "#.##")
+         + " | Score: " + scoreMsg(qualityScore), alert.freq_once_per_bar)
+
+    if revShort
+        alert("REVERSAL SHORT — " + setupType
+         + " | TP: " + str.tostring(fbShortTP, "#.##")
+         + " | SL: " + str.tostring(fbShortSL, "#.##")
+         + " | Score: " + scoreMsg(qualityScore), alert.freq_once_per_bar)
+
+// ═══════════════════════════════════════════════════════════════
+// PLOTTING
+// ═══════════════════════════════════════════════════════════════
+// Swing pivot markers
+plotshape(showSwingPivots and isSH, title="Swing High",
+     location=location.abovebar, style=shape.triangledown,
+     color=color.new(cShort, 30), size=size.tiny)
+plotshape(showSwingPivots and isSL, title="Swing Low",
+     location=location.belowbar, style=shape.triangleup,
+     color=color.new(cLong, 30), size=size.tiny)
+
+// Price
+plot(close, title="Price", color=cNeutral, linewidth=1, style=plot.style_line)
+
+// ── Range background tint ──
+bgcolor(inRange ? color.new(color.yellow, 93) : na, title="Range BG")
+
+// ── Fast spike highlight ──
+plotshape(isSpike and showZones, title="Fast Spike",
+     location=location.abovebar, style=shape.arrowdown,
+     color=color.new(cFastSpike, 50), size=size.tiny)
+
+// ── GET_READY markers ──
+plotchar(getReadyLong,  title="GET_READY Long",  char="◆", location=location.belowbar, color=cGetReady)
+plotchar(getReadyShort, title="GET_READY Short", char="◆", location=location.abovebar, color=cGetReady)
+
+// ── Reversal entry triggers ──
+plotchar(fbLongEntry,  title="Failed Breakout Long",  char="►", location=location.belowbar, color=cLong)
+plotchar(fbShortEntry, title="Failed Breakout Short", char="►", location=location.abovebar, color=cShort)
+plotchar(spikeReversalLong,  title="Spike Rev Long",  char="►", location=location.belowbar, color=cFastSpike)
+plotchar(spikeReversalShort, title="Spike Rev Short", char="►", location=location.abovebar, color=cFastSpike)
+plotchar(partialFillLong,  title="Partial Fill Long",  char="►", location=location.belowbar, color=cPartialFill)
+plotchar(partialFillShort, title="Partial Fill Short", char="►", location=location.abovebar, color=cPartialFill)
+
+// ── Range lines ──
+if showZones
+    if inRange
+        box.new(bar_index - rangeLookback, rangeHighLevel,
+                bar_index, rangeLowLevel,
+                border_color=color.new(color.yellow, 60),
+                border_width=1,
+                bgcolor=color.new(color.yellow, 97),
+                extend=extend.none)
+
+    // Range high/low labels
+    if barstate.islast
+        label.new(bar_index, rangeHighLevel,
+             text="Range High " + str.tostring(rangeHighLevel, "#.##"),
+             color=color.orange, textcolor=color.white,
+             size=size.tiny, style=label.style_label_down, yloc=yloc.abovebar)
+        label.new(bar_index, rangeLowLevel,
+             text="Range Low " + str.tostring(rangeLowLevel, "#.##"),
+             color=color.blue, textcolor=color.white,
+             size=size.tiny, style=label.style_label_up, yloc=yloc.belowbar)
+
+// ── Entry/stop/TP lines ──
+if showZones and barstate.islast
+    // Failed breakout entries
+    if fbLongEntry
+        line.new(bar_index - 1, rangeHighLevel,
+                 bar_index, rangeHighLevel,
+                 color=cLong, width=2, style=line.style_dashed)
+    if fbShortEntry
+        line.new(bar_index - 1, rangeLowLevel,
+                 bar_index, rangeLowLevel,
+                 color=cShort, width=2, style=line.style_dashed)
+
+    // Top tick / Bottom tick markers
+    if topTickConfirmed
+        lbl := label.new(barSH, lastSH,
+             text="TOP TICK @ " + str.tostring(lastSH, "#.##"),
+             color=cPartialFill, textcolor=color.black,
+             size=size.small, style=label.style_label_down, yloc=yloc.abovebar)
+    if bottomTickConfirmed
+        lbl := label.new(barSL, lastSL,
+             text="BOT TICK @ " + str.tostring(lastSL, "#.##"),
+             color=cPartialFill, textcolor=color.black,
+             size=size.small, style=label.style_label_up, yloc=yloc.belowbar)
+
+// ═══════════════════════════════════════════════════════════════
+// QUALITY TABLE
+// ═══════════════════════════════════════════════════════════════
+var table tbl = table.new(position.top_right, 2, 8,
+     bgcolor=color.new(color.black, 90), frame=true, frame_color=color.gray)
+
+if showQuality and barstate.islast
+    table.cell(tbl, 0, 0, "Mean Reversion Strategy", text_color=color.white, text_size=size.small)
+    table.cell(tbl, 1, 0, "spicyofc rules",          text_color=color.gray, text_size=size.small)
+
+    string qStr = str.tostring(qualityScore) + "/3"
+    color qCol  = qualityScore >= 2 ? color.green : qualityScore == 1 ? color.orange : color.gray
+    table.cell(tbl, 0, 1, "Reversal Quality",  text_color=color.gray, text_size=size.small)
+    table.cell(tbl, 1, 1, qStr,                text_color=qCol, text_size=size.small)
+
+    // Criteria breakdown
+    string crit1 = isSpike ? "Spike" : inRange ? "Range" : "—"
+    table.cell(tbl, 0, 2, "Approach",   text_color=color.gray, text_size=size.small)
+    table.cell(tbl, 1, 2, crit1,        text_color=color.gray, text_size=size.small)
+
+    table.cell(tbl, 0, 3, "Vol OK",     text_color=color.gray, text_size=size.small)
+    table.cell(tbl, 1, 3, volumeRegime ? "✓" : "✗", text_color=volumeRegime ? color.green : color.gray, text_size=size.small)
+
+    table.cell(tbl, 0, 4, "Sideways",   text_color=color.gray, text_size=size.small)
+    table.cell(tbl, 1, 4, inRange ? "✓" : "✗",  text_color=inRange ? color.green : color.gray, text_size=size.small)
+
+    // Setup type
+    table.cell(tbl, 0, 5, "Setup",      text_color=color.gray, text_size=size.small)
+    table.cell(tbl, 1, 5, setupType,    text_color=color.cyan,  text_size=size.small)
+
+    // Signal
+    string sigStr = revLong ? "LONG TRIGGER" :
+                    revShort ? "SHORT TRIGGER" :
+                    getReadyLong ? "GET_READY LONG" :
+                    getReadyShort ? "GET_READY SHORT" : "—"
+    color sigCol = revLong or getReadyLong ? cLong :
+                   revShort or getReadyShort ? cShort : color.gray
+    table.cell(tbl, 0, 6, "Signal",     text_color=color.gray, text_size=size.small)
+    table.cell(tbl, 1, 6, sigStr,       text_color=sigCol,   text_size=size.small)
+
+    // Recommendation
+    string rec = qualityScore >= 2 ? "Target opposite range" :
+                 qualityScore == 1 ? "Conservative 1R" : "AVOID"
+    table.cell(tbl, 0, 7, "→ Target",   text_color=color.gray, text_size=size.small)
+    table.cell(tbl, 1, 7, rec,          text_color=color.gray, text_size=size.small)
+
+// ═══════════════════════════════════════════════════════════════
+// VOLUME SUBCHART
+// ═══════════════════════════════════════════════════════════════
+plot(volume, title="Volume", color=volumeRegime ? color.green : color.gray,
+     style=plot.style_histogram, histbase=0)
+plot(volMA,  title="Volume MA", color=color.gray, linewidth=1, style=plot.style_line)
+
+// ═══════════════════════════════════════════════════════════════
+// STRATEGY EXPORT
+// ═══════════════════════════════════════════════════════════════
+plot(strategy.failed_long  = fbLongEntry          ? 1 : 0, title="FBL", display=display.none)
+plot(strategy.failed_short = fbShortEntry         ? 1 : 0, title="FBS", display=display.none)
+plot(strategy.spike_long   = spikeReversalLong    ? 1 : 0, title="SRL", display=display.none)
+plot(strategy.spike_short  = spikeReversalShort   ? 1 : 0, title="SRS", display=display.none)
+plot(strategy.partial_long  = partialFillLong     ? 1 : 0, title="PFL", display=display.none)
+plot(strategy.partial_short = partialFillShort     ? 1 : 0, title="PFS", display=display.none)
+
+// ═══════════════════════════════════════════════════════════════
+// HOW TO TRADE THIS (Summary)
+// ═══════════════════════════════════════════════════════════════
+//
+// REVERSAL REGIME CHECK (Easy Mode — 2/3 required):
+//   ✓ Fast spike OR ranging price action approaching the level
+//   ✓ Volume NOT increasing (decreasing or flat)
+//   ✓ Sideways price action (in-range)
+//
+// ────────────────────────────────────────────────────────────────
+// SETUP 1: FAILED BREAKOUTS
+// ────────────────────────────────────────────────────────────────
+// CONDITION: Price must be IN A RANGE
+// CONDITION: Volume CANNOT be increasing
+//
+// ENTRY: After 1 candle closes BACK INSIDE the range
+//   Long:  price failed to break resistance, now closing back inside
+//   Short: price failed to break support, now closing back inside
+//
+// TARGET: Opposite side of the range
+// STOP:   Next S/R level OR ~1R in opposite direction
+//
+// ────────────────────────────────────────────────────────────────
+// SETUP 2: FAST SPIKE REVERSALS
+// ────────────────────────────────────────────────────────────────
+// REQUIREMENTS:
+//   - Price "spikes" a level (steep, large move, high volume)
+//   - Price FAILS to break through the level
+//   - Creates a swing high/low
+//   - 1 candle closes BELOW swing low (bearish) or ABOVE swing high (bullish)
+//
+// ORDER TYPE:
+//   Spike size > 1.5% → MARKET order
+//   Spike size < 1.5% → LIMIT order on the level
+//
+// TARGET: Origin of the spike (where it started)
+// STOP:   Extreme point of the spike
+//
+// AVOID IF:
+//   - Spike was caused by news event
+//   - Spike was correlated with BTC moving
+//
+// QUALITY:
+//   Structure broken in < 15 min  = HIGH quality
+//   Structure broken in < 30 min  = AVERAGE
+//   Structure broken in > 90 min  = WARNING, skip
+//
+// ────────────────────────────────────────────────────────────────
+// SETUP 3: PARTIAL FILL REVERSALS (Top Tick / Bottom Tick)
+// ────────────────────────────────────────────────────────────────
+// REQUIREMENTS:
+//   - Price "top ticks" — hits EXACT same price as prior swing high
+//     (within 2 ticks, not just "similar")
+//   - Higher-than-average volume on the top tick candle
+//
+// ENTRY: After the NEXT candle closes in the OPPOSITE direction
+//   (confirms market orders failed to break through the wall)
+//
+// TARGET: Recent swing low (long) / swing high (short)
+// STOP:   1R equidistant from entry to target
+//
+// ORDER TYPE: MARKET order only (must react to confirmation)
+//
+// ────────────────────────────────────────────────────────────────
+// TARGET GUIDANCE:
+//   Score 3/3 → full R, be ambitious
+//   Score 2/3 → standard 1R target
+//   Score 1/3 → conservative, skip if unsure
+//   Score 0/3 → DO NOT TRADE REVERSAL
+//
+// ────────────────────────────────────────────────────────────────
+// TIMEFRAME: Author trades 1-minute exclusively
+// SCANNERS:   Orion Terminal (Trade Count), Velo (Top/Worst Gainers)
+// COINS:      Altcoin perpetuals with $100k+/min volume
+//
+// ================================================================

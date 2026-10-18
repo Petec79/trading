@@ -1,0 +1,17 @@
+{
+  "bankroll": 9960.0,
+  "initial_bankroll": 10000.0,
+  "positions": {
+    "test-market": {
+      "side": "BUY",
+      "size": 100.0,
+      "avg_price": 0.4,
+      "whale": "HorizonSplendidView",
+      "opened_at": "2026-04-03T00:49:16.225390+00:00"
+    }
+  },
+  "daily_start_bankroll": 10000.0,
+  "daily_pnl": 0.0,
+  "daily_trades": 1,
+  "saved_at": "2026-04-03T00:49:16.225461+00:00"
+}

@@ -1,0 +1,109 @@
+
+╔══════════════════════════════════════════════════════════════╗
+║         MEAN REVERSION MARKET SCAN          2026-04-14 17:38 UTC ║
+╚══════════════════════════════════════════════════════════════╝
+
+============================================================
+  SESSION BIAS  (Velo Return Buckets)
+============================================================
+  🟡  MIXED  |  MODERATE conviction
+  → Balanced — neg 200 vs pos 450 (pos ratio 69%)
+
+  Trading direction guidance:
+  → No strong directional skew. Trade both longs & shorts.
+  → Watch for mean reversion at range edges.
+
+  Your backtest best sessions (UTC):
+  • London AM (08-12 UTC):  83% WR — BEST
+  • Asian (00-08 UTC):      91% WR — very strong
+  • London PM (12-16 UTC):  monitor, mixed results
+
+============================================================
+  FUNDING ALERTS  (due within 90 min)
+============================================================
+  • RAVEUSDT      -100.115%  →  ⚠️  Funding due in 21 min (-1.001% — exceeds 0.1R, skip if entering)
+  • ENJUSDT       -81.623%  →  ⚠️  Funding due in 21 min (-0.816% — exceeds 0.1R, skip if entering)
+  • ARIAUSDT      +117.897%  →  ⚠️  Funding due in 21 min (+1.179% — exceeds 0.1R, skip if entering)
+
+============================================================
+  TOP COINS FOR MEAN REVERSION  (Binance data)
+============================================================
+
+  🟢  TOP REVERSAL LONG CANDIDATES  (coins up, look for reversal shorts)
+  ──────────────────────────────────────────────────
+  Coin             24h %    MR Score    5m Vol   Trades/5m
+  RAVEUSDT        +38.26%  MR  57.8     $  13.6M  96,803.0  
+  ALPACAUSDT     +391.23%  MR  53.6     $  10.1M  62,019.0   ⚠️ PARABOLIC
+  ETHUSDT          +3.98%  MR  48.2     $  58.6M  32,326.0  
+  币安人生USDT        +45.16%  MR  47.7     $   2.9M  19,824.0  
+  BLESSUSDT       +15.99%  MR  44.7     $   2.4M  50,024.0  
+  MYXUSDT         +35.75%  MR  40.5     $   1.5M  18,429.0  
+  BTCUSDT          +2.61%  MR  39.8     $  63.3M  17,327.0  
+  ALPHAUSDT       +36.41%  MR  38.1     $   1.3M  11,788.0  
+
+  🔴  TOP REVERSAL SHORT CANDIDATES  (coins down, look for reversal longs)
+  ──────────────────────────────────────────────────
+  Coin             24h %    MR Score    5m Vol   Trades/5m
+  ZECUSDT          -0.65%  MR  15.6     $   2.7M   8,919.0
+  ARIAUSDT        -86.68%  MR  22.7     $   1.4M  25,004.0
+  PORT3USDT       -68.31%  MR  25.1     $   0.7M   9,928.0
+
+============================================================
+  ⚠️  COINS TO AVOID  (Staircase / Breakout mode)
+============================================================
+  🚫 ALPACAUSDT     +391.23%  → In breakout/staircase mode. DO NOT fade this direction.
+  🚫 BNXUSDT         +66.38%  → In breakout/staircase mode. DO NOT fade this direction.
+  🚫 PORT3USDT       -68.31%  → In breakout/staircase mode. DO NOT fade this direction.
+  🚫 ARIAUSDT        -86.68%  → In breakout/staircase mode. DO NOT fade this direction.
+
+============================================================
+  SPAGHETTI CHART  (Velo — Price Pattern Classification)
+============================================================
+
+  Spaghetti Chart Analysis (Velo Market — 1w timeframe):
+
+⚠️  Classification: PARABOLIC
+   Coins shown: RAVE, 币安人生, BLESS, ENJ, AKE, AIOT, GIGGLE, MAGMA, CHILLGUY, SKYAI
+   Y-axis max: +6000%
+   AVOID reversal trades — staircase breakout in progress
+
+Spicy pattern rules:
+  Upstairs/Downstairs Staircase → AVOID reversals (trend continuation)
+  Choppy Uptrend → Reversal longs preferred
+  Choppy Downtr
+
+  Pattern key:
+  🟢 Choppy Range        → BEST for mean reversion (both directions)
+  ↗️ Choppy Uptrend      → Reversal longs preferred
+  ↘️ Choppy Downtrend    → Reversal shorts preferred
+  ↑↓ Staircase          → AVOID reversals — trend continuation
+
+============================================================
+  YOUR EDGE BY DAY  (ETHUSDT 5m backtest)
+============================================================
+
+  Day         | Win Rate | Total R  | Verdict
+  ------------|----------|----------|------------------
+  Thursday    |   89%    |  +8.0R   | ★★★ BEST DAY
+  Monday      |   82%    |  +5.5R   | ★★  Strong
+  Sunday      |   75%    |  +4.0R   | ★★  Good
+  Saturday    |   67%    |  +2.0R   | ★   Decent
+  Tuesday     |   61%    |  +1.5R   | —   Average
+  Wednesday   |   58%    |  +0.5R   | —   Weak
+  Friday      |   43%    |  -2.0R   | ✗   AVOID
+
+============================================================
+  TODAY'S BEST WINDOWS  (based on your backtest)
+============================================================
+
+  Today is Tuesday.
+  ★  08-12 UTC   London AM        83% WR
+
+  Current UTC time: 17:38
+  → 
+  → 
+  → 
+  → Late session — Asian flush incoming
+
+────────────────────────────────────────────────────────────
+  Scores formula: trades(30) + volume(20) + spike potential(30) + funding(10) - staircase penalty(20)

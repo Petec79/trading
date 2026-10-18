@@ -1,0 +1,33 @@
+========================================================
+  SPICY MEAN REVERSION SCAN
+  2026-10-18 21:01 UTC
+========================================================
+
+Session Bias: MIXED/MILD
+
+Spaghetti: UNKNOWN — y-axis 0%
+
+🔴  Top Reversal SHORT Candidates (coins UP — fade the top):
+Coin            24h %    MR  Flags
+------------------------------------------------
+ICNT            +2.01  61.0  ★TOP_TRD
+
+🟢  Top Reversal LONG Candidates (coins DOWN — buy the dip):
+Coin            24h %    MR  Flags
+------------------------------------------------
+AGT            -23.72  90.0  ⚡FAST ★TOP_TRD
+AVA            -14.91  67.5  ★TOP_TRD
+ZEC             -8.37  64.2  ★TOP_TRD
+SAND            -6.22  63.1  ★TOP_TRD
+BTW             -4.30  62.8  ★TOP_TRD
+Q               -3.10  61.5  ★TOP_TRD
+ENA             -8.53  59.3  
+PUMP           -11.62  58.5  
+
+Today's Edge: Late session (16-00 UTC) — Asian flush territory. Reduced conviction. Best edge waits for 00-08 UTC.
+
+Bottom line:
+Bias MIXED — both directions viable.
+Top SHORT: ICNT | Top LONG: AGT.
+Not a high-conviction day — wait for Asian session if in doubt.
+========================================================

@@ -1,0 +1,77 @@
+[
+  {
+    "news": "Bitcoin surges past $85,000 amid institutional buying",
+    "signal": "BUY",
+    "price_change": 5.2
+  },
+  {
+    "news": "Major bank announces cryptocurrency trading desk",
+    "signal": "BUY",
+    "price_change": 3.1
+  },
+  {
+    "news": "SEC approves Bitcoin ETF",
+    "signal": "BUY",
+    "price_change": 8.5
+  },
+  {
+    "news": "Regulatory concerns rise as Bitcoin mining energy usage increases",
+    "signal": "SELL",
+    "price_change": -2.3
+  },
+  {
+    "news": "SEC delays Bitcoin ETF decision again",
+    "signal": "SELL",
+    "price_change": -1.8
+  },
+  {
+    "news": "El Salvador's Bitcoin holdings now worth $1 billion",
+    "signal": "BUY",
+    "price_change": 1.2
+  },
+  {
+    "news": "China bans cryptocurrency mining",
+    "signal": "SELL",
+    "price_change": -15.0
+  },
+  {
+    "news": "Twitter accepts Bitcoin for tips",
+    "signal": "BUY",
+    "price_change": 2.5
+  },
+  {
+    "news": "Major retailer accepts Bitcoin payments",
+    "signal": "BUY",
+    "price_change": 1.8
+  },
+  {
+    "news": "Bitcoin hits all-time high",
+    "signal": "HOLD",
+    "price_change": 0.5
+  },
+  {
+    "news": "Correction begins after ATH",
+    "signal": "SELL",
+    "price_change": -8.2
+  },
+  {
+    "news": "Fed signals interest rate hike",
+    "signal": "SELL",
+    "price_change": -4.5
+  },
+  {
+    "news": "Institutional investors increase Bitcoin allocation",
+    "signal": "BUY",
+    "price_change": 2.1
+  },
+  {
+    "news": "DeFi total value locked reaches new high",
+    "signal": "BUY",
+    "price_change": 3.8
+  },
+  {
+    "news": "Crypto exchange hacked for $100M",
+    "signal": "SELL",
+    "price_change": -5.2
+  }
+]
