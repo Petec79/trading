@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import time
 import traceback
 from concurrent.futures import ThreadPoolExecutor
@@ -49,6 +50,11 @@ class Runner:
         self.state_file = STATE_FILE if strategy == "momentum" else STATE_DIR / spec["state"]
         self.journal = JournalBridge(scanner=spec["scanner"]) if journal else None
         self.btc = None
+        self.news = None
+        self.news_mode = os.environ.get("NEWS_MODE", getattr(self.cfg, "news_mode", "off"))
+        if self.is_mr and self.news_mode != "off":
+            from .news import NewsChecker
+            self.news = NewsChecker(getattr(self.cfg, "news_lookback_min", 120))
         self.engines: dict[str, SymbolEngine] = {}
         self.allowed: dict[str, set] = {}
         self.last_bar_t: dict[str, int] = {}
@@ -232,6 +238,20 @@ class Runner:
                     return 0
             except Exception as e:
                 print(f"[funding] {t.symbol} check failed ({e}) — taking the trade", flush=True)
+        if kind == "signal" and self.news is not None and t.setup == "fast_spike" and eng is not None:
+            # MR guide P1 p122-124: don't fade news-driven spikes
+            from .news import blocks
+            try:
+                res = self.news.check(t.symbol, now_ms or int(time.time() * 1000), t.details.get("spike_start_t"))
+            except Exception as e:
+                res = {"verdict": "check_failed", "items": [], "hype": None, "errors": [str(e)[:200]]}
+            t.details["news"] = res
+            print(f"[news] {t.symbol} {res['verdict']} ({self.news_mode}) hype={res.get('hype')} "
+                  f"items={[i['title'][:60] for i in res['items']]} errors={res.get('errors')}", flush=True)
+            if blocks(res, self.news_mode):
+                eng.trade = None
+                print(f"[news] {t.symbol} fast spike skipped: {res['verdict']}", flush=True)
+                return 0
         if kind == "signal":
             print(f"[signal] {t.symbol} {t.side} {t.entry_type} lvl={t.level} sl={t.stop} "
                   f"tp={t.target} score={t.score} {t.details}", flush=True)

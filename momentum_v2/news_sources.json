@@ -1,0 +1,28 @@
+{
+  "_comment": "Sources for the fast-spike news check - curate this list. x_allowlist = X handles (no @) whose posts count as real news; verify each handle before relying on it. coin_accounts maps a ticker (e.g. \"PEPE\") to the project's own X handle. Apify: apify_actor_small handles queries that may return < 50 posts (apidojo~tweet-scraper requires >= 50 per query); both need a PAID Apify plan to run via API.",
+  "rss": [
+    "https://www.coindesk.com/arc/outboundfeeds/rss/",
+    "https://www.theblock.co/rss.xml",
+    "https://cointelegraph.com/rss",
+    "https://decrypt.co/feed"
+  ],
+  "x_allowlist": [
+    "binance",
+    "Bybit_Official",
+    "okx",
+    "coinbase",
+    "PeckShieldAlert",
+    "CertiKAlert",
+    "zachxbt",
+    "lookonchain",
+    "tree_news_feed",
+    "WatcherGuru",
+    "WuBlockchain",
+    "CoinDesk",
+    "TheBlock__",
+    "Cointelegraph"
+  ],
+  "coin_accounts": {},
+  "apify_actor_small": "apidojo~twitter-scraper-lite",
+  "apify_actor_sample": "apidojo~tweet-scraper"
+}

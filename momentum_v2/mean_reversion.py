@@ -95,6 +95,8 @@ class MRConfig(Config):
     tt_swing_strength: int = 2
     tt_vol_mult: float = 2.0             # top-tick candle volume ≥ 2× 1h average (P1 p138: more = better)
 
+    news_mode: str = "shadow"            # shadow | enforce | off (env NEWS_MODE overrides) — see news.py
+    news_lookback_min: int = 120         # news in the 2h before the spike counts
     history_bars: int = 400              # ≥ 6h so duration-of-regime can reach the 4h exception
     max_open_positions: int = 5
     # P1 p108 "the same S/R levels are SUCCESSFULLY holding price": each edge needs
@@ -408,7 +410,8 @@ class MeanReversionEngine(SymbolEngine):
         quality = "good" if bos_min <= 15 else "average" if bos_min <= 30 else "slow"
         return self._new_trade(side, "fast_spike", piv, ref, entry_type, stop, sk, origin,
                                "spike_origin", score, crit,
-                               {**det, "spike": sp, "key_level": L, "bos_minutes": bos_min,
+                               {**det, "spike": sp, "spike_start_t": bars[sp["origin_i"]].t,
+                                "key_level": L, "bos_minutes": bos_min,
                                 "bos_quality": quality, "btc_move_pct": None if btc is None else round(btc * 100, 2)},
                                now)
 
