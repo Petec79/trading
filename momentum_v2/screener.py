@@ -139,8 +139,8 @@ def build(now_ms: int | None = None) -> dict:
             and float(t.get("quoteVolume", 0)) >= cfg.min_quote_vol_per_min * 60 * 4]
     bias = bias_from_returns([float(t["priceChangePercent"]) for t in tick])
     by_chg = sorted(tick, key=lambda t: float(t["priceChangePercent"]), reverse=True)
-    gainers = [t["symbol"] for t in by_chg[:cfg.universe_gainers]]
-    losers = [t["symbol"] for t in by_chg[::-1][:cfg.universe_losers]]
+    gainers = [t["symbol"] for t in by_chg[:cfg.universe_gainers] if float(t["priceChangePercent"]) > 0]
+    losers = [t["symbol"] for t in by_chg[::-1][:cfg.universe_losers] if float(t["priceChangePercent"]) < 0]
     by_24h = [t["symbol"] for t in sorted(tick, key=lambda t: int(t.get("count", 0)), reverse=True)
               [:cfg.trade_count_candidates]]
     counts = recent_trade_counts(by_24h, cfg.trade_count_minutes, now_ms)
@@ -167,7 +167,11 @@ def build(now_ms: int | None = None) -> dict:
                 continue
             if len(bars) < 260:
                 continue
-            a = analyse(sym, bars, ctx, cfg, mrc)
+            try:
+                a = analyse(sym, bars, ctx, cfg, mrc)
+            except Exception as e:                      # one bad coin must not kill the report
+                print(f"[screener] {sym} analyse failed: {e}", flush=True)
+                continue
             a["chg_24h_pct"] = chg24.get(sym)
             a["trades_5m"] = counts.get(sym)
             a["source"] = [n for n, lst in (("gainer", gainers), ("loser", losers), ("hot", hot)) if sym in lst]

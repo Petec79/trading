@@ -330,6 +330,9 @@ class SymbolEngine:
         cfg = self.cfg
         if self.trade is not None or len(bars) < cfg.staircase_bars + 2:
             return []
+        hour = bars[-60:]
+        if cfg.min_quote_vol_per_min and sum(b.qv for b in hour) / len(hour) < cfg.min_quote_vol_per_min:
+            return []                            # same liquidity rule as the trade (p58)
         cur = bars[-1]
         now = cur.t + cfg.bar_ms
         out = []

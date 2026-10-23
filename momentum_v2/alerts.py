@@ -70,8 +70,9 @@ def rr(ref: float, stop: float, target: Optional[float]) -> Optional[float]:
 
 
 class Notifier:
-    def __init__(self, strategy: str):
+    def __init__(self, strategy: str, cfg=None):
         self.strategy = strategy
+        self.cfg = cfg
         self.token = os.environ.get("TELEGRAM_BOT_TOKEN")
         chat = os.environ.get("TRADING_TELEGRAM_CHAT_ID") or \
             (os.environ.get("TELEGRAM_ALLOWED_USERS", "").split(",")[0].strip() or None)
@@ -99,11 +100,17 @@ class Notifier:
         discord("signals", text)
         return msg_id
 
+    @staticmethod
+    def _now(now_ms: Optional[int]) -> int:
+        """The real clock at send time (the cycle clock can be a minute old by now)."""
+        return max(int(time.time() * 1000), now_ms or 0)
+
     def late(self, event_close_ms: int, now_ms: int) -> bool:
-        return now_ms - event_close_ms > self.late_s * 1000
+        return self._now(now_ms) - event_close_ms > self.late_s * 1000
 
     # ── messages ───────────────────────────────────────────────────────────
     def signal(self, t: Trade, now_ms: int, news_line: str = "") -> Optional[int]:
+        now_ms = self._now(now_ms)
         icon = "🟢" if t.side == "long" else "🔴"
         name = SETUP_NAMES.get(t.setup, t.setup)
         late = self.late(t.signal_t, now_ms)
@@ -140,15 +147,21 @@ class Notifier:
         if news_line:
             lines.append(news_line)
         lines.append("paper signal — your call")
+        # remember what we told you, so follow-ups can flag any change at fill
+        t.details["alert_stop"], t.details["alert_target"] = t.stop, t.target
         mid = self.send("\n".join(lines))
         if mid:
             t.details["tg_msg_id"] = mid
         return mid
 
     def _expiry_min(self) -> int:
+        if self.cfg is not None:
+            return int(self.cfg.limit_expiry_bars * self.cfg.bar_ms / 60_000)
         return 60
 
     def _missed_frac(self) -> float:
+        if self.cfg is not None:
+            return self.cfg.missed_fraction
         return 0.9 if self.strategy == "mean_reversion" else 1.0
 
     def followup(self, kind: str, t: Trade, now_ms: int, bar_close_ms: int, why: str = "") -> None:
@@ -158,16 +171,29 @@ class Notifier:
         if kind == "fill":
             txt = f"{late}✅ {sym} {t.side} filled at {_px(t.entry)} (paper). Stop {_px(t.cur_stop)}, " \
                   f"TP {_px(t.target)}."
+            a_stop, a_tgt = t.details.get("alert_stop"), t.details.get("alert_target")
+            if a_stop is not None and abs(a_stop - t.cur_stop) > 1e-12:
+                txt += (f"\n⚠️ STOP CHANGED: now {_px(t.cur_stop)} (signal said {_px(a_stop)}) — "
+                        f"re-based on the fill price, move yours to match")
+            if a_tgt is not None and t.target is not None and abs(a_tgt - t.target) > 1e-12:
+                txt += f"\n⚠️ TARGET CHANGED: now {_px(t.target)} (signal said {_px(a_tgt)})"
         elif kind == "cancel":
             reason = {"missed_ran_to_target": "price ran most of the way to target without filling",
                       "limit_expired": "not filled in time",
                       "gapped_through_stop": "price went through the stop before filling",
                       "target_too_close_after_fill": "not enough room left to target"}.get(t.exit_reason, t.exit_reason)
-            txt = f"{late}🚫 {sym}: CANCEL the {t.side} order — {reason}."
+            if t.entry_type == "market":
+                # there was no order to cancel — you may already be in the trade
+                act = ("If you entered at market, EXIT NOW — price is already through the stop."
+                       if t.exit_reason == "gapped_through_stop" else
+                       "If you entered at market, the move left is too small — exit at about breakeven.")
+                txt = f"{late}⛔ {sym}: bot did NOT take this {t.side} — {reason}.\n{act}"
+            else:
+                txt = f"{late}🚫 {sym}: CANCEL the {t.side} limit order — {reason}."
         elif kind == "stop_move":
             txt = f"{late}🔒 {sym}: move stop to {_px(t.cur_stop)} ({why})."
         elif kind == "exit":
-            what = {"TP": "target hit", "SL": "stop hit", "SL_after_+0.9R": "stop hit after it was moved up",
+            what = {"TP": "target hit", "SL": "stop hit", "SL_after_+0.9R": "stop hit after it was moved to ~breakeven",
                     "TRAIL_STOP": "trailing stop hit", "TIME_2h": "2-hour time stop — EXIT NOW",
                     "EARLY_CUT_15m": "no progress in 15 min — EXIT NOW"}.get(t.exit_reason, t.exit_reason)
             txt = f"{late}🏁 {sym} {t.side}: {what} at {_px(t.exit)} → {t.net_r:+.2f}R net (paper)."

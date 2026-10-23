@@ -18,6 +18,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import queue
 import threading
 import time
 import traceback
@@ -68,10 +69,11 @@ class Runner:
         self.state_file = STATE_FILE if strategy == "momentum" else STATE_DIR / spec["state"]
         self.journal = JournalBridge(scanner=spec["scanner"]) if journal else None
         self.btc = None
-        self.notifier = Notifier(strategy) if alerts else None
+        self.notifier = Notifier(strategy, self.cfg) if alerts else None
         # get-ready alerts: ALERT_WATCH=off to receive only actionable signals
         self.watch_alerts = os.environ.get("ALERT_WATCH", "on").lower() not in ("off", "0", "false")
         self.news_thread = None
+        self._news_q: "queue.Queue" = queue.Queue()     # news results from the background thread
         self.news = None
         self.news_mode = os.environ.get("NEWS_MODE", getattr(self.cfg, "news_mode", "off"))
         if self.is_mr and self.news_mode != "off":
@@ -191,7 +193,9 @@ class Runner:
         try:
             now_ms = binance.server_time_ms()          # Binance's clock, not ours
         except Exception:
-            now_ms = int(time.time() * 1000) - 2_000
+            # local clock; still safe — closed_klines only keeps candles that have closed by now_ms
+            now_ms = int(time.time() * 1000)
+        self.apply_news_results()
         self.refresh_universe(now_ms)
         if self.is_mr:
             try:   # BTC candles for the "spike correlated with BTC" check (P1 p125)
@@ -252,8 +256,13 @@ class Runner:
             self.engines.pop(sym)
             self.last_bar_t.pop(sym, None)
             self.htf_cache.pop(sym, None)
+        self.apply_news_results()
         self.save()
-        self.heartbeat(now_ms)
+        # only report alive if the bot actually saw market data this cycle
+        if fetched or not syms:
+            self.heartbeat(now_ms)
+        else:
+            print("[cycle] no market data fetched — heartbeat NOT written", flush=True)
         live = [f"{e.symbol}:{e.trade.side}:{e.trade.status}" for e in self.engines.values() if e.trade]
         took = int(time.time() * 1000) - now_ms
         print(f"[cycle] {iso(now_ms)} watching {len(self.allowed)} | active {live or '-'} | {took} ms", flush=True)
@@ -353,18 +362,30 @@ class Runner:
         else:
             discord("signals", fmt_signal(t))
 
-    def _run_news(self, t, now_ms) -> dict:
+    def apply_news_results(self):
+        """Attach background news verdicts to their trades — on the main thread only,
+        so state saves never see Trade.details change mid-write."""
+        while True:
+            try:
+                t, res = self._news_q.get_nowait()
+            except queue.Empty:
+                return
+            t.details["news"] = res
+
+    def _run_news(self, t, now_ms, attach: bool = True) -> dict:
         try:
             res = self.news.check(t.symbol, now_ms, t.details.get("spike_start_t"))
         except Exception as e:
             res = {"verdict": "check_failed", "items": [], "hype": None, "errors": [str(e)[:200]]}
-        t.details["news"] = res
+        if attach:
+            t.details["news"] = res
         print(f"[news] {t.symbol} {res['verdict']} ({self.news_mode}) hype={res.get('hype')} "
               f"items={[i['title'][:60] for i in res['items']]} errors={res.get('errors')}", flush=True)
         return res
 
     def _news_async(self, t, now_ms):
-        res = self._run_news(t, now_ms)
+        res = self._run_news(t, now_ms, attach=False)
+        self._news_q.put((t, res))
         if self.notifier:
             self.notifier.news_result(t, res, self.news_mode)
 

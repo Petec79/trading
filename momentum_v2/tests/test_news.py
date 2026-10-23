@@ -137,6 +137,7 @@ def test_live_runner_shadow_records_and_enforce_blocks():
             if r.news_thread:
                 r.news_thread.join(5)
                 r.news_thread = None
+            r.apply_news_results()                    # verdicts are attached on the main loop
             assert (eng.trade is not None) == kept, (mode, verdict)
             assert t.details["news"]["verdict"] == verdict
 

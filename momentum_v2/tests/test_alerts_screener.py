@@ -36,6 +36,10 @@ class RecNotifier(Notifier):
         self.n += 1
         return self.n
 
+    @staticmethod
+    def _now(now_ms):                      # tests control the clock
+        return now_ms
+
 
 def mk(side="short", entry_type="market", level=1.2200, stop=1.2410, target=1.1890, ref=1.2195,
        setup="fast_spike", signal_t=NOW):
@@ -200,6 +204,75 @@ def test_screener_build_and_report_with_faked_binance():
     assert {c["symbol"] for c in rep["coins"]} == set(data)
     assert "MOMENTUM LONG" in txt and "STA" in txt and "REVERSAL-FRIENDLY" in txt and "RNG" in txt
     assert "FUNDING due" in txt and "longs pay" in txt and "MIXED" in txt
+
+
+# ── regressions from independent review ─────────────────────────────────────
+def test_market_skip_tells_you_to_exit_not_cancel():
+    n = RecNotifier()
+    t = mk(side="long", entry_type="market", level=100.0, ref=100.5, stop=99.0, target=103.0)
+    n.signal(t, NOW)
+    t.exit_reason = "gapped_through_stop"
+    n.followup("cancel", t, NOW + 60_000, NOW + 60_000)
+    txt = n.sent[-1]["text"]
+    assert "did NOT take" in txt and "EXIT NOW" in txt and "CANCEL" not in txt
+
+
+def test_limit_cancel_still_says_cancel():
+    n = RecNotifier()
+    t = mk(entry_type="limit", level=1.23, ref=1.23, target=1.195)
+    n.signal(t, NOW)
+    t.exit_reason = "limit_expired"
+    n.followup("cancel", t, NOW + 60_000, NOW + 60_000)
+    assert "CANCEL the short limit order" in n.sent[-1]["text"]
+
+
+def test_fill_flags_a_stop_rebased_on_the_fill():
+    n = RecNotifier()
+    t = mk(side="long", entry_type="market", level=100.0, ref=100.0, stop=98.0, target=102.0)
+    n.signal(t, NOW)
+    t.entry, t.stop, t.cur_stop = 100.6, 99.2, 99.2        # 1R re-based at fill
+    n.followup("fill", t, NOW + 60_000, NOW + 60_000)
+    assert "STOP CHANGED: now 99.2000 (signal said 98.0000)" in n.sent[-1]["text"]
+
+
+def test_alerts_use_the_real_send_clock():
+    import time as _t
+    n = Notifier("momentum")                                 # real _now()
+    t = mk(signal_t=int(_t.time() * 1000) - 5 * 60_000)
+    n.signal(t, now_ms=t.signal_t + 1000)                   # stale cycle clock says "1s late"
+    assert n.sent[-1]["text"].startswith("⚠️ LATE")
+
+
+def test_watch_and_engine_agree_on_failed_breakout_volume_rule():
+    c, bars, r_hi = TM.failed_breakout_short(vol=lambda i: 400 + i * 10)   # rising volume
+    e = MeanReversionEngine("TESTUSDT", c)
+    assert not any(w["setup"] == "failed breakout" for w in e.watch(bars[:-1], TM.ctx_for(bars[:-1])))
+    assert MeanReversionEngine("TESTUSDT", c).on_bar(bars, TM.ctx_for(bars)) == []
+
+
+def test_momentum_watch_respects_liquidity_filter():
+    c, bars, L, ctx = TE.setup_long(TE.cfg(min_quote_vol_per_min=10 ** 12))
+    assert SymbolEngine("TESTUSDT", c).watch(bars[:-1], ctx) == []
+
+
+def test_runner_heartbeat_not_written_without_market_data():
+    from momentum_v2 import live, binance
+    with tempfile.TemporaryDirectory() as d:
+        live.STATE_DIR, live.STATE_FILE = Path(d), Path(d) / "s.json"
+        r = live.Runner(journal=False)
+        r.allowed = {"FOOUSDT": {"long"}}
+        r.universe_t = 10 ** 15
+        orig = (binance.server_time_ms, binance.closed_klines)
+        try:
+            binance.server_time_ms = lambda: NOW
+
+            def boom(*a, **k):
+                raise RuntimeError("binance down")
+            binance.closed_klines = boom
+            r.cycle()
+        finally:
+            binance.server_time_ms, binance.closed_klines = orig
+        assert not (Path(d) / "heartbeat_momentum.json").exists()
 
 
 if __name__ == "__main__":
