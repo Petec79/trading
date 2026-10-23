@@ -61,7 +61,7 @@ class JournalBridge:
         t.journal_id = self.j.log_signal(
             scanner=self.scanner, direction=t.side, coin=t.symbol,
             entry_price=t.entry, sl_price=t.stop, tp_price=t.target,
-            quality_score=t.score, flags=[k for k, v in crit.items() if v],
+            quality_score=t.score, flags=_flags(t),
             level_approach=("fast_spike" if crit.get("fast_spike") or crit.get("slow_grind") is False
                             else "slow_grind" if crit.get("slow_grind") else "unclear"),
             volume_regime=("increasing" if crit.get("volume_increasing")
@@ -76,6 +76,17 @@ class JournalBridge:
         self.j.capture_exit(t.journal_id, t.exit, t.exit_reason, r_override=t.net_r,
                             notes=f"gross {t.gross_r:+.2f}R, net {t.net_r:+.2f}R after fees; "
                                   f"MFE {t.mfe_r:.2f}R; details {json.dumps(t.details, default=str)}")
+
+
+def _flags(t: Trade) -> list[str]:
+    flags = [k for k, v in t.criteria.items() if v] + [f"setup:{t.setup}"]
+    news = t.details.get("news")
+    if news:
+        flags.append(f"news:{news['verdict']}")
+        hype = news.get("hype") or {}
+        if hype.get("bot_share") is not None:
+            flags.append(f"bot_share:{hype['bot_share']}")
+    return flags
 
 
 SETUP_NAMES = {"momentum_breakout": "Momentum breakout", "failed_breakout": "MR failed breakout",

@@ -136,8 +136,29 @@ expected result for noise. An earlier, looser "edges held" rule produced about 8
 - **Funding:** skip if funding is above 0.1R and due within 90 min, and only when this side pays (part 1 p92). Live only.
 - **Return-bucket bias:** if 80%+ of coins are up, it only takes longs; if 80%+ are down, only shorts (part 1 p81-82). Live only.
 
+### News check for fast spikes (part 1 p122-125) — `news.py`
+When a fast spike reversal fires, the bot checks the 2 hours before the spike:
+1. **Exchange announcements:** the Bybit and OKX official announcement APIs, and Binance's public announcements page.
+2. **News RSS:** CoinDesk, The Block, Cointelegraph and Decrypt.
+3. **X via Apify:** only posts from an **allowlist** in `news_sources.json` count. That covers exchanges, security alert accounts, established news accounts and the coin's own account. Bot posts can't get in.
+
+A hit is any item that mentions the ticker and matches one of the guide's "big news" types: listing, delisting, hack or exploit, founder or team trouble, big update, partnership.
+
+The bot also records a **hype score** that never blocks a trade. It takes the latest 50 cashtag posts and measures post rate, the share from bot-like accounts, and duplicate text. This lets you test later whether bot-hyped, news-free spikes fade better.
+
+| `NEWS_MODE` | Behaviour |
+|---|---|
+| `shadow` (default) | Record the verdict and hype on the trade. Never block |
+| `enforce` | Skip the trade on big news, **or if every source failed** |
+| `off` | No check |
+
+- **Setup:** X needs `APIFY_TOKEN` in `~/.hermes/.env` and a **paid Apify plan**. On the free plan the main actor only runs in demo mode and can't be called from code. Without it, the X part is skipped and recorded as an error, and exchanges and RSS still run.
+- **Cost:** about $0.02–0.05 per fast-spike signal.
+- **Evaluate it:** after a few weeks, run `python3 -m momentum_v2.news_report` to compare net R by news verdict and hype level.
+- **Maintenance:** check the allowlist handles before relying on them, and add projects' own accounts under `coin_accounts`.
+
 ### Not automated
-- **News check (part 1 p123-124):** the author searches X for news before trading a spike. The bot can't, so news-driven spikes will get traded. This is the biggest gap.
+- **News judgement:** `news.py` matches keywords and allowlisted sources. It can't read context the way the author does when he skims X and Velo, so expect some misses and false alarms. Shadow mode is how you measure them.
 - **All-time highs/lows (part 2 p49):** the guide says to avoid reversals there. The bot doesn't know where they are.
 - **Order book checks:** the order-book-thickness check and round-number levels need the order book.
 - **Huge spikes (20%+):** the option to take a smaller target instead of the origin isn't automated.
@@ -145,6 +166,7 @@ expected result for noise. An earlier, looser "edges held" rule produced about 8
 ### Run / backtest
 ```bash
 python3 momentum_v2/tests/test_mean_reversion.py                 # 26 tests
+python3 momentum_v2/tests/test_news.py                           # 10 tests (all sources faked)
 python3 -m momentum_v2.live --strategy mean_reversion --once --no-journal
 cp momentum_v2/deploy/mean-reversion-v2.service ~/.config/systemd/user/
 systemctl --user daemon-reload && systemctl --user enable --now mean-reversion-v2

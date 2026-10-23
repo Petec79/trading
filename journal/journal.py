@@ -128,7 +128,10 @@ class Journal:
         does nothing and returns the existing trade_id.
         """
         today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
-        prefix = "MR" if scanner == "mean_reversion" else "MOMO"
+        # One prefix per scanner — momentum_v2 and mean_reversion_v2 used to share
+        # "MOMO" and collided on the UNIQUE trade_id.
+        prefix = {"mean_reversion": "MR", "momentum": "MOMO",
+                  "momentum_v2": "MOMO2", "mean_reversion_v2": "MR2"}.get(scanner, scanner.upper()[:6])
 
         with sqlite3.connect(self.db) as con:
             cur = con.execute(
@@ -147,15 +150,15 @@ class Journal:
                     """, (entry_price, sl_price, tp_price, thesis, existing_id))
                 return existing_id
 
-        # Count today's trades for numbering
+        # Next free number for this prefix today (based on existing ids, so a
+        # back-dated signal_ts can never produce a duplicate)
+        stem = f"{prefix}-{today.replace('-','')}-"
         with sqlite3.connect(self.db) as con:
-            cur = con.execute(
-                "SELECT COUNT(*) FROM trades WHERE signal_ts >= ? AND scanner=?",
-                (today, scanner)
-            )
-            count = cur.fetchone()[0] + 1
+            rows = con.execute("SELECT trade_id FROM trades WHERE trade_id LIKE ?", (stem + "%",)).fetchall()
+        nums = [int(r[0][len(stem):]) for r in rows if r[0][len(stem):].isdigit()]
+        count = max(nums, default=0) + 1
 
-        trade_id = f"{prefix}-{today.replace('-','')}-{count:03d}"
+        trade_id = f"{stem}{count:03d}"
         flags_json = json.dumps(flags or [])
         now = datetime.now(timezone.utc).isoformat()
         sig_ts = signal_ts or now
