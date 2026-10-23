@@ -18,6 +18,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import threading
 import time
 import traceback
 from concurrent.futures import ThreadPoolExecutor
@@ -28,6 +29,7 @@ from .config import Config, TF_MS
 from .core import LevelContext, SymbolEngine, period_start
 from .mean_reversion import MRConfig, MeanReversionEngine, BTCSeries, funding_blocks
 from .reporting import JournalBridge, discord, fmt_signal, fmt_exit, iso
+from .alerts import Notifier
 
 STATE_DIR = Path(__file__).resolve().parent / "data"
 STATE_FILE = STATE_DIR / "live_state.json"
@@ -40,8 +42,24 @@ STRATEGIES = {
 }
 
 
+def recent_trade_counts(symbols: list[str], minutes: int, now_ms: int) -> dict[str, int]:
+    """Trades in the last `minutes` closed 1m candles, per symbol (parallel)."""
+    def one(sym):
+        try:
+            return sym, binance.trades_last_minutes(sym, minutes, now_ms)
+        except Exception:
+            return sym, None
+    out = {}
+    with ThreadPoolExecutor(max_workers=8) as pool:
+        for sym, n in pool.map(one, symbols):
+            if n is not None:
+                out[sym] = n
+    return out
+
+
 class Runner:
-    def __init__(self, cfg: Config | None = None, journal: bool = True, strategy: str = "momentum"):
+    def __init__(self, cfg: Config | None = None, journal: bool = True, strategy: str = "momentum",
+                 alerts: bool = False):
         spec = STRATEGIES[strategy]
         self.strategy = strategy
         self.is_mr = strategy == "mean_reversion"
@@ -50,6 +68,10 @@ class Runner:
         self.state_file = STATE_FILE if strategy == "momentum" else STATE_DIR / spec["state"]
         self.journal = JournalBridge(scanner=spec["scanner"]) if journal else None
         self.btc = None
+        self.notifier = Notifier(strategy) if alerts else None
+        # get-ready alerts: ALERT_WATCH=off to receive only actionable signals
+        self.watch_alerts = os.environ.get("ALERT_WATCH", "on").lower() not in ("off", "0", "false")
+        self.news_thread = None
         self.news = None
         self.news_mode = os.environ.get("NEWS_MODE", getattr(self.cfg, "news_mode", "off"))
         if self.is_mr and self.news_mode != "off":
@@ -128,20 +150,9 @@ class Runner:
         """Top coins by trade count over the last 5 minutes (Orion "TRD 5M").
         Falls back to the 24h count if Binance can't be polled."""
         cfg = self.cfg
-        by_24h = sorted(tick, key=lambda t: int(t.get("count", 0)), reverse=True)
-        cands = [t["symbol"] for t in by_24h[:cfg.trade_count_candidates]]
-        counts: dict[str, int] = {}
-
-        def one(sym):
-            try:
-                return sym, binance.trades_last_minutes(sym, cfg.trade_count_minutes, now_ms)
-            except Exception:
-                return sym, None
-
-        with ThreadPoolExecutor(max_workers=8) as pool:
-            for sym, n in pool.map(one, cands):
-                if n is not None:
-                    counts[sym] = n
+        cands = [t["symbol"] for t in sorted(tick, key=lambda t: int(t.get("count", 0)), reverse=True)
+                 [:cfg.trade_count_candidates]]
+        counts = recent_trade_counts(cands, cfg.trade_count_minutes, now_ms)
         if len(counts) < len(cands) // 2:
             print("[universe] 5m trade counts unavailable, using 24h counts", flush=True)
             return cands[:cfg.universe_trade_count]
@@ -164,6 +175,18 @@ class Runner:
         return ctx
 
     # ── one cycle ──────────────────────────────────────────────────────────
+    def _fetch(self, sym: str, now_ms: int):
+        """1m candles + levels for one coin. Retries briefly if Binance hasn't
+        published the candle that just closed yet, so signals aren't a minute late."""
+        want = (now_ms // 60_000) * 60_000 - 60_000          # open time of the candle that just closed
+        bars = []
+        for attempt in range(3):
+            bars = binance.closed_klines(sym, "1m", self.cfg.history_bars, now_ms)
+            if bars and bars[-1].t >= want:
+                break
+            time.sleep(0.4)
+        return bars, self.context(sym, now_ms)
+
     def cycle(self):
         try:
             now_ms = binance.server_time_ms()          # Binance's clock, not ours
@@ -176,10 +199,23 @@ class Runner:
             except Exception as e:
                 print(f"[btc] fetch failed: {e}", flush=True)
                 self.btc = None
+        # fetch every coin in parallel — the slow part — then run the strategy logic
+        syms = list(self.allowed.items())
+        fetched: dict[str, tuple] = {}
+        with ThreadPoolExecutor(max_workers=8) as pool:
+            futs = {sym: pool.submit(self._fetch, sym, now_ms) for sym, _ in syms}
+            for sym, f in futs.items():
+                try:
+                    fetched[sym] = f.result()
+                except Exception as e:
+                    print(f"[{sym}] fetch error: {e}", flush=True)
         open_count = sum(1 for e in self.engines.values() if e.trade)  # pending + open count toward the cap
-        for sym, sides in list(self.allowed.items()):
+        for sym, sides in syms:
+            if sym not in fetched:
+                continue
             try:
-                bars = binance.closed_klines(sym, "1m", self.cfg.history_bars, now_ms)
+                bars, ctx = fetched[sym]
+                ctx.btc = self.btc
                 if len(bars) < 10:
                     continue
                 eng = self.engines.setdefault(sym, self.engine_cls(sym, self.cfg))
@@ -193,15 +229,21 @@ class Runner:
                     new_idx = [i for i, b in enumerate(bars) if b.t > last]
                 if not new_idx:
                     continue
-                ctx = self.context(sym, now_ms)
                 for i in new_idx:
                     can_open = bool(sides) and open_count < self.cfg.max_open_positions
+                    bar_close = bars[i].t + 60_000
                     for ev in eng.on_bar(bars[:i + 1], ctx, allowed=sides, can_open=can_open):
-                        open_count += self.handle(ev, eng, now_ms)
+                        open_count += self.handle(ev, eng, now_ms, bar_close)
                     # checkpoint after every candle so a crash never replays it
                     self.last_bar_t[sym] = bars[i].t
                     self.save()
                 eng.closed.clear()
+                # get-ready alerts on the newest candle only
+                if (self.notifier and self.watch_alerts and sides
+                        and open_count < self.cfg.max_open_positions):
+                    for w in eng.watch(bars, ctx, sides):
+                        print(f"[watch] {w['symbol']} {w['side']} {w['setup']}", flush=True)
+                        self.notifier.watch(w, now_ms)
             except Exception as e:
                 print(f"[{sym}] error: {e}", flush=True)
                 traceback.print_exc()
@@ -211,8 +253,19 @@ class Runner:
             self.last_bar_t.pop(sym, None)
             self.htf_cache.pop(sym, None)
         self.save()
+        self.heartbeat(now_ms)
         live = [f"{e.symbol}:{e.trade.side}:{e.trade.status}" for e in self.engines.values() if e.trade]
-        print(f"[cycle] {iso(now_ms)} watching {len(self.allowed)} | active {live or '-'}", flush=True)
+        took = int(time.time() * 1000) - now_ms
+        print(f"[cycle] {iso(now_ms)} watching {len(self.allowed)} | active {live or '-'} | {took} ms", flush=True)
+
+    def heartbeat(self, now_ms: int):
+        try:
+            hb = STATE_DIR / f"heartbeat_{self.strategy}.json"
+            hb.parent.mkdir(parents=True, exist_ok=True)
+            hb.write_text(json.dumps({"ts": now_ms, "watching": len(self.allowed),
+                                      "active": [e.symbol for e in self.engines.values() if e.trade]}))
+        except Exception as e:
+            print(f"[heartbeat] {e}", flush=True)
 
     def _journal(self, fn, t):
         """Journal/Discord problems are logged, never allowed to break trade state."""
@@ -223,16 +276,24 @@ class Runner:
         except Exception as e:
             print(f"[journal] {t.symbol} write failed: {e}", flush=True)
 
-    def handle(self, ev: dict, eng=None, now_ms: int | None = None) -> int:
+    def _news_line(self) -> str:
+        return {"shadow": "News: checking… (result follows; shadow mode)",
+                "enforce": "News: checked ✓ none found"}.get(self.news_mode, "")
+
+    def handle(self, ev: dict, eng=None, now_ms: int | None = None, bar_close: int | None = None) -> int:
         t = ev["trade"]
         kind = ev["type"]
+        now_ms = now_ms or int(time.time() * 1000)
+        bar_close = bar_close or now_ms
+        n = self.notifier
         if kind == "signal" and self.is_mr and eng is not None:
             # P1 p92: funding > 0.1R due within 90 min → don't take the trade
             try:
                 rate, nxt = binance.premium_index(t.symbol)
                 ref = t.details.get("ref_entry") or t.level
                 stop_pct = abs(ref - t.stop) / ref * 100
-                if funding_blocks(rate * 100, nxt, now_ms or int(time.time() * 1000), stop_pct, t.side):
+                t.details["funding"] = {"rate_pct": round(rate * 100, 4), "next": nxt}
+                if funding_blocks(rate * 100, nxt, now_ms, stop_pct, t.side):
                     print(f"[funding] {t.symbol} skipped: funding {rate * 100:+.3f}% due soon", flush=True)
                     eng.trade = None
                     return 0
@@ -241,36 +302,71 @@ class Runner:
         if kind == "signal" and self.news is not None and t.setup == "fast_spike" and eng is not None:
             # MR guide P1 p122-124: don't fade news-driven spikes
             from .news import blocks
-            try:
-                res = self.news.check(t.symbol, now_ms or int(time.time() * 1000), t.details.get("spike_start_t"))
-            except Exception as e:
-                res = {"verdict": "check_failed", "items": [], "hype": None, "errors": [str(e)[:200]]}
-            t.details["news"] = res
-            print(f"[news] {t.symbol} {res['verdict']} ({self.news_mode}) hype={res.get('hype')} "
-                  f"items={[i['title'][:60] for i in res['items']]} errors={res.get('errors')}", flush=True)
-            if blocks(res, self.news_mode):
-                eng.trade = None
-                print(f"[news] {t.symbol} fast spike skipped: {res['verdict']}", flush=True)
-                return 0
+            if self.news_mode == "enforce":
+                if n:
+                    n.send(f"⏳ {t.symbol.replace('USDT', '')} {t.side.upper()} fast spike reversal — "
+                           f"possible setup, checking news (≤60s)…")
+                res = self._run_news(t, now_ms)
+                if n:
+                    n.news_result(t, res, self.news_mode)
+                if blocks(res, self.news_mode):
+                    eng.trade = None
+                    print(f"[news] {t.symbol} fast spike skipped: {res['verdict']}", flush=True)
+                    return 0
+            else:
+                # shadow: the signal goes out first, the news verdict follows as a reply
+                self._signal_out(t, now_ms, bar_close, self._news_line())
+                self.news_thread = threading.Thread(target=self._news_async, args=(t, now_ms), daemon=True)
+                self.news_thread.start()
+                return 1
         if kind == "signal":
-            print(f"[signal] {t.symbol} {t.side} {t.entry_type} lvl={t.level} sl={t.stop} "
-                  f"tp={t.target} score={t.score} {t.details}", flush=True)
-            discord("signals", fmt_signal(t))
+            self._signal_out(t, now_ms, bar_close, self._news_line() if t.setup == "fast_spike" and self.news else "")
             return 1
         elif kind == "fill":
             print(f"[fill] {t.symbol} {t.side} @ {t.entry}", flush=True)
             self._journal(self.journal.on_fill if self.journal else None, t)
+            if n:
+                n.followup("fill", t, now_ms, bar_close)
         elif kind == "cancel":
             print(f"[cancel] {t.symbol} {t.side}: {t.exit_reason}", flush=True)
+            if n:
+                n.followup("cancel", t, now_ms, bar_close)
             return -1
         elif kind == "stop_move":
             print(f"[stop] {t.symbol} → {t.cur_stop} ({ev.get('why')})", flush=True)
+            if n:
+                n.followup("stop_move", t, now_ms, bar_close, ev.get("why", ""))
         elif kind == "exit":
             print(f"[exit] {t.symbol} {t.exit_reason} {t.net_r:+.2f}R", flush=True)
             self._journal(self.journal.on_exit if self.journal else None, t)
+            if n:
+                n.followup("exit", t, now_ms, bar_close)
             discord("journal", fmt_exit(t))
             return -1
         return 0
+
+    def _signal_out(self, t, now_ms, bar_close, news_line=""):
+        print(f"[signal] {t.symbol} {t.side} {t.setup} {t.entry_type} lvl={t.level} sl={t.stop} "
+              f"tp={t.target} score={t.score}", flush=True)
+        if self.notifier:
+            self.notifier.signal(t, now_ms, news_line)
+        else:
+            discord("signals", fmt_signal(t))
+
+    def _run_news(self, t, now_ms) -> dict:
+        try:
+            res = self.news.check(t.symbol, now_ms, t.details.get("spike_start_t"))
+        except Exception as e:
+            res = {"verdict": "check_failed", "items": [], "hype": None, "errors": [str(e)[:200]]}
+        t.details["news"] = res
+        print(f"[news] {t.symbol} {res['verdict']} ({self.news_mode}) hype={res.get('hype')} "
+              f"items={[i['title'][:60] for i in res['items']]} errors={res.get('errors')}", flush=True)
+        return res
+
+    def _news_async(self, t, now_ms):
+        res = self._run_news(t, now_ms)
+        if self.notifier:
+            self.notifier.news_result(t, res, self.news_mode)
 
 
 def main():
@@ -278,8 +374,9 @@ def main():
     ap.add_argument("--strategy", choices=sorted(STRATEGIES), default="momentum")
     ap.add_argument("--once", action="store_true")
     ap.add_argument("--no-journal", action="store_true")
+    ap.add_argument("--no-alerts", action="store_true", help="don't send Telegram/Discord alerts")
     a = ap.parse_args()
-    r = Runner(journal=not a.no_journal, strategy=a.strategy)
+    r = Runner(journal=not a.no_journal, strategy=a.strategy, alerts=not a.no_alerts)
     while True:
         try:
             r.cycle()
@@ -288,8 +385,9 @@ def main():
             traceback.print_exc()
         if a.once:
             break
-        # wake 3s after the next minute boundary (candle has closed by then)
-        time.sleep(60 - (time.time() % 60) + 3)
+        # wake 0.6s after the next minute boundary: the candle has just closed
+        # (_fetch retries briefly if Binance hasn't published it yet)
+        time.sleep(60 - (time.time() % 60) + 0.6)
 
 
 if __name__ == "__main__":

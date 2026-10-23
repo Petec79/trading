@@ -278,6 +278,7 @@ class SymbolEngine:
         self.cfg = cfg
         self.trade: Optional[Trade] = None
         self.attempted: dict[str, int] = {}   # level key → signal time, one attempt per level
+        self.watched: dict[str, int] = {}     # get-ready alerts already sent (in memory only)
         self.closed: list[Trade] = []
 
     # -- persistence ----------------------------------------------------------
@@ -313,6 +314,59 @@ class SymbolEngine:
         cutoff = bar.t - 8 * 86_400_000
         self.attempted = {k: v for k, v in self.attempted.items() if v >= cutoff}
         return ev
+
+    # -- get-ready alerts (manual trading) ------------------------------------------
+    def _mark_watch(self, key: str, t: int) -> bool:
+        cutoff = t - 8 * 3_600_000
+        self.watched = {k: v for k, v in self.watched.items() if v >= cutoff}
+        if key in self.watched:
+            return False
+        self.watched[key] = t
+        return True
+
+    def watch(self, bars: list[Bar], ctx: LevelContext, allowed=frozenset({"long", "short"})) -> list[dict]:
+        """Momentum: price is close to a level and the regime already qualifies —
+        the trigger is one candle close away. Uses the same criteria as the trade."""
+        cfg = self.cfg
+        if self.trade is not None or len(bars) < cfg.staircase_bars + 2:
+            return []
+        cur = bars[-1]
+        now = cur.t + cfg.bar_ms
+        out = []
+        for tf in cfg.level_timeframes:
+            lvl = ctx.prev(tf, now)              # the level the NEXT candle will be judged against
+            if not lvl:
+                continue
+            for side in ("long", "short"):
+                if side not in allowed:
+                    continue
+                d = 1 if side == "long" else -1
+                L = lvl.h if d == 1 else lvl.l
+                dist = (L - cur.c) * d / cur.c
+                if not (0 < dist <= cfg.watch_dist_pct):
+                    continue
+                if f"{side}:{tf}:{L}" in self.attempted:
+                    continue
+                c3, _ = staircase(bars, d, cfg)
+                if cfg.require_staircase and not c3:
+                    continue
+                c1, _ = slow_grind(bars, d, cfg)
+                c2, _ = volume_increasing(bars, cfg)
+                score = int(c1) + int(c2) + int(c3)
+                if score < cfg.min_score:
+                    continue
+                stop = self._find_stop(bars, d, L)
+                if stop is None or not self._mark_watch(f"{side}:{tf}:{L}", now):
+                    continue
+                sd = abs(L - stop) / L
+                how = f"LIMIT at {L:g} after the close" if sd < cfg.limit_vs_market_pct else "MARKET right after the close"
+                word = "above" if d == 1 else "below"
+                out.append({"symbol": self.symbol, "side": side, "setup": "momentum breakout",
+                            "bar_close": now,
+                            "text": (f"{dist * 100:.2f}% from the previous {tf} {'high' if d == 1 else 'low'} {L:g}. "
+                                     f"{side.upper()} on a 1m CLOSE {word} {L:g} → {how}.\n"
+                                     f"Stop ~{stop:g} ({sd * 100:.2f}%) | score {score}/3 so far")})
+        return out
 
     # -- signal -----------------------------------------------------------------
     def _check_signal(self, bars: list[Bar], ctx: LevelContext, allowed) -> Optional[Trade]:
@@ -396,7 +450,9 @@ class SymbolEngine:
             score=score,
             criteria={"slow_grind": c1, "volume_increasing": c2, "staircase_2h": c3},
             details={**d1, **d2, **d3, "stop_dist_pct": round(dist * 100, 2),
-                     "quote_vol_per_min": round(qv)},
+                     "quote_vol_per_min": round(qv),
+                     # where a manual trader would get in: the level (limit) or this close (market)
+                     "ref_entry": L if entry_type == "limit" else bars[-1].c},
         )
 
     def _target(self, ctx, side, entry, stop, score, now, beyond=None) -> tuple[Optional[float], str]:

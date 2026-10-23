@@ -134,6 +134,9 @@ def test_live_runner_shadow_records_and_enforce_blocks():
             t = mk_trade()
             eng.trade = t
             r.handle({"type": "signal", "trade": t}, eng, NOW)
+            if r.news_thread:
+                r.news_thread.join(5)
+                r.news_thread = None
             assert (eng.trade is not None) == kept, (mode, verdict)
             assert t.details["news"]["verdict"] == verdict
 
