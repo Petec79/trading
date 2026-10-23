@@ -1,0 +1,14 @@
+[Unit]
+Description=Mean reversion v2 paper trader (Spicy reversals, 1m, paper only)
+After=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/home/openclaw/workspace
+ExecStart=/usr/bin/python3 -m momentum_v2.live --strategy mean_reversion
+Restart=always
+RestartSec=20
+Environment=PYTHONUNBUFFERED=1
+
+[Install]
+WantedBy=default.target

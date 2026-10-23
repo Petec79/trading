@@ -89,5 +89,11 @@ def trades_last_minutes(symbol: str, minutes: int, now_ms: int) -> int:
     return sum(int(k[8]) for k in done)
 
 
+def premium_index(symbol: str) -> tuple[float, int | None]:
+    """(last funding rate as a fraction, next funding time ms)."""
+    d = _get("/fapi/v1/premiumIndex", {"symbol": symbol})
+    return float(d.get("lastFundingRate", 0) or 0), d.get("nextFundingTime")
+
+
 def tickers_24h() -> list[dict]:
     return _get("/fapi/v1/ticker/24hr")

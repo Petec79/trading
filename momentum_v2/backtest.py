@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 """
-Momentum v2 — backtester. Replays 1-minute candles through the SAME engine
-the live paper bot uses, with fees, slippage and conservative fills.
+v2 backtester (momentum or mean reversion). Replays 1-minute candles through
+the SAME engine the live paper bot uses, with fees, slippage and conservative fills.
 
     python3 -m momentum_v2.backtest --symbols WIFUSDT,PEPEUSDT,FARTCOINUSDT \
         --start 2026-09-01 --end 2026-10-20
+    python3 -m momentum_v2.backtest --strategy mean_reversion --symbols ... --start ... --end ...
     python3 -m momentum_v2.backtest --symbols ... --side long --out trades.csv
     python3 -m momentum_v2.backtest --csv-dir /path/to/binance_vision_1m_csvs ...
 
@@ -28,6 +29,7 @@ from pathlib import Path
 
 from .config import Config
 from .core import Bar, LevelContext, SymbolEngine, resample
+from .mean_reversion import MRConfig, MeanReversionEngine, BTCSeries
 
 DATA = Path(__file__).resolve().parent / "data"
 WARMUP_DAYS = 8
@@ -60,12 +62,14 @@ def load_bars(symbol: str, start: int, end: int, csv_dir: str | None) -> list[Ba
     return bars
 
 
-def run_symbol(symbol: str, bars: list[Bar], start: int, cfg: Config, sides: set) -> list:
+def run_symbol(symbol: str, bars: list[Bar], start: int, cfg: Config, sides: set,
+               engine_cls=SymbolEngine, btc: BTCSeries | None = None) -> list:
     htf = {tf: resample(bars, tf) for tf in ("1h", "4h", "1d", "1w")}
     # drop the very first (partial) candle of each timeframe — warm-up starts mid-period
     htf = {tf: c[1:] for tf, c in htf.items()}
     ctx = LevelContext(htf, cfg)
-    eng = SymbolEngine(symbol, cfg)
+    ctx.btc = btc
+    eng = engine_cls(symbol, cfg)
     cancelled = []
     keep = cfg.history_bars
     for i, b in enumerate(bars):
@@ -108,6 +112,7 @@ def summarise(trades: list, cancelled: list) -> str:
             out.append(f"  {str(k):<22} n={len(v):<4} win={sum(1 for r in v if r > 0) / len(v) * 100:5.1f}%  "
                        f"avg={statistics.mean(v):+.3f}R  total={sum(v):+.2f}R")
 
+    table("setup", lambda t: t.setup)
     table("score", lambda t: f"{t.score}/3")
     table("exit reason", lambda t: t.exit_reason)
     table("entry type", lambda t: t.entry_type)
@@ -124,7 +129,7 @@ def summarise(trades: list, cancelled: list) -> str:
 
 
 def write_csv(trades: list, path: str):
-    cols = ["symbol", "side", "level_tf", "level", "signal_t", "entry_type", "entry", "entry_t",
+    cols = ["symbol", "setup", "side", "level_tf", "level", "signal_t", "entry_type", "entry", "entry_t",
             "stop", "target", "target_kind", "score", "exit", "exit_t", "exit_reason",
             "gross_r", "net_r", "mfe_r", "criteria", "details"]
     with open(path, "w", newline="") as f:
@@ -139,6 +144,7 @@ def write_csv(trades: list, path: str):
 
 def main():
     ap = argparse.ArgumentParser()
+    ap.add_argument("--strategy", choices=["momentum", "mean_reversion"], default="momentum")
     ap.add_argument("--symbols", required=True, help="comma-separated, e.g. WIFUSDT,PEPEUSDT")
     ap.add_argument("--start", required=True)
     ap.add_argument("--end", required=True)
@@ -148,20 +154,23 @@ def main():
     ap.add_argument("--set", action="append", default=[],
                     help="override a config value, e.g. --set early_cut_enabled=False")
     a = ap.parse_args()
-    cfg = Config()
+    mr = a.strategy == "mean_reversion"
+    cfg = MRConfig() if mr else Config()
+    engine_cls = MeanReversionEngine if mr else SymbolEngine
     for kv in a.set:
         k, v = kv.split("=", 1)
         cur = getattr(cfg, k)
         setattr(cfg, k, (v.lower() == "true") if isinstance(cur, bool) else type(cur)(v))
     sides = {"long", "short"} if a.side == "both" else {a.side}
     start, end = ms(a.start), ms(a.end)
+    btc = BTCSeries(load_bars("BTCUSDT", start - WARMUP_DAYS * 86_400_000, end, a.csv_dir)) if mr else None
     all_trades, all_cancel = [], []
     for sym in [s.strip().upper() for s in a.symbols.split(",") if s.strip()]:
         bars = load_bars(sym, start - WARMUP_DAYS * 86_400_000, end, a.csv_dir)
         if not bars:
             print(f"{sym}: no data")
             continue
-        tr, ca = run_symbol(sym, bars, start, cfg, sides)
+        tr, ca = run_symbol(sym, bars, start, cfg, sides, engine_cls, btc)
         print(f"{sym}: {len(bars)} bars → {len(tr)} trades, total {sum(t.net_r for t in tr):+.2f}R", flush=True)
         all_trades += tr
         all_cancel += ca

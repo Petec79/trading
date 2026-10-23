@@ -1,15 +1,15 @@
 #!/usr/bin/env python3
 """
-Momentum v2 — live PAPER runner.
+v2 live PAPER runner — momentum or mean reversion.
 
 Runs continuously, wakes a few seconds after every minute, processes each
 watched coin's newly CLOSED 1-minute candles through the strategy engine,
-and records fills/exits in the journal (scanner = "momentum_v2").
-No orders are ever sent to an exchange.
+and records fills/exits in the journal (scanner = "momentum_v2" or
+"mean_reversion_v2"). No orders are ever sent to an exchange.
 
-    python3 -m momentum_v2.live              # run forever (use the systemd unit)
-    python3 -m momentum_v2.live --once       # one cycle, then exit (testing)
-    python3 -m momentum_v2.live --no-journal # don't write to journal.db
+    python3 -m momentum_v2.live                              # momentum, forever
+    python3 -m momentum_v2.live --strategy mean_reversion    # mean reversion, forever
+    python3 -m momentum_v2.live --once --no-journal          # one dry cycle (testing)
 
 Env (optional): DISCORD_SIGNALS_WEBHOOK, DISCORD_JOURNAL_WEBHOOK
 """
@@ -25,16 +25,30 @@ from pathlib import Path
 from . import binance
 from .config import Config, TF_MS
 from .core import LevelContext, SymbolEngine, period_start
+from .mean_reversion import MRConfig, MeanReversionEngine, BTCSeries, funding_blocks
 from .reporting import JournalBridge, discord, fmt_signal, fmt_exit, iso
 
 STATE_DIR = Path(__file__).resolve().parent / "data"
 STATE_FILE = STATE_DIR / "live_state.json"
 
+STRATEGIES = {
+    "momentum": {"cfg": Config, "engine": SymbolEngine, "scanner": "momentum_v2",
+                 "state": "live_state.json"},
+    "mean_reversion": {"cfg": MRConfig, "engine": MeanReversionEngine, "scanner": "mean_reversion_v2",
+                       "state": "mr_live_state.json"},
+}
+
 
 class Runner:
-    def __init__(self, cfg: Config, journal: bool = True):
-        self.cfg = cfg
-        self.journal = JournalBridge() if journal else None
+    def __init__(self, cfg: Config | None = None, journal: bool = True, strategy: str = "momentum"):
+        spec = STRATEGIES[strategy]
+        self.strategy = strategy
+        self.is_mr = strategy == "mean_reversion"
+        self.cfg = cfg or spec["cfg"]()
+        self.engine_cls = spec["engine"]
+        self.state_file = STATE_FILE if strategy == "momentum" else STATE_DIR / spec["state"]
+        self.journal = JournalBridge(scanner=spec["scanner"]) if journal else None
+        self.btc = None
         self.engines: dict[str, SymbolEngine] = {}
         self.allowed: dict[str, set] = {}
         self.last_bar_t: dict[str, int] = {}
@@ -45,11 +59,11 @@ class Runner:
 
     # ── persistence ────────────────────────────────────────────────────────
     def load(self):
-        if not STATE_FILE.exists():
+        if not self.state_file.exists():
             return
-        st = json.loads(STATE_FILE.read_text())
+        st = json.loads(self.state_file.read_text())
         for sym, es in st.get("engines", {}).items():
-            e = SymbolEngine(sym, self.cfg)
+            e = self.engine_cls(sym, self.cfg)
             e.load(es)
             self.engines[sym] = e
         self.last_bar_t = st.get("last_bar_t", {})
@@ -60,9 +74,10 @@ class Runner:
         st = {"engines": {s: e.state() for s, e in self.engines.items()},
               "last_bar_t": self.last_bar_t,
               "allowed": {k: sorted(v) for k, v in self.allowed.items()}}
-        tmp = STATE_FILE.with_suffix(".tmp")
+        self.state_file.parent.mkdir(parents=True, exist_ok=True)
+        tmp = self.state_file.with_suffix(".tmp")
         tmp.write_text(json.dumps(st, indent=1))
-        tmp.replace(STATE_FILE)
+        tmp.replace(self.state_file)
 
     # ── universe (p31-33) ──────────────────────────────────────────────────
     def refresh_universe(self, now_ms: int):
@@ -79,12 +94,21 @@ class Runner:
         losers = [t["symbol"] for t in by_chg[::-1][:cfg.universe_losers] if float(t["priceChangePercent"]) < 0]
         hot = self.hot_by_recent_trades(tick, now_ms)
         allowed: dict[str, set] = {}
-        for s in gainers:
-            allowed.setdefault(s, set()).add("long")
-        for s in losers:
-            allowed.setdefault(s, set()).add("short")
-        for s in hot:
-            allowed.setdefault(s, set()).update({"long", "short"})
+        if self.is_mr:
+            # MR guide P1 p81-85: top gainers/losers + top trade count, both directions,
+            # unless the return buckets are heavily one-sided (then trade with them).
+            up = sum(1 for t in tick if float(t["priceChangePercent"]) > 0) / max(1, len(tick))
+            sides = {"long"} if up >= 0.8 else {"short"} if up <= 0.2 else {"long", "short"}
+            for s in gainers + losers + hot:
+                allowed[s] = set(sides)
+            print(f"[universe] return buckets: {up:.0%} of coins up → {sorted(sides)}", flush=True)
+        else:
+            for s in gainers:
+                allowed.setdefault(s, set()).add("long")
+            for s in losers:
+                allowed.setdefault(s, set()).add("short")
+            for s in hot:
+                allowed.setdefault(s, set()).update({"long", "short"})
         # keep anything with a live order/position so it keeps being managed
         for s, e in self.engines.items():
             if e.trade:
@@ -129,7 +153,9 @@ class Runner:
             if cache.get(tf + "_p") != period:
                 cache[tf] = binance.closed_klines(sym, tf, lim, now_ms)
                 cache[tf + "_p"] = period
-        return LevelContext({tf: cache[tf] for tf in need}, self.cfg)
+        ctx = LevelContext({tf: cache[tf] for tf in need}, self.cfg)
+        ctx.btc = self.btc
+        return ctx
 
     # ── one cycle ──────────────────────────────────────────────────────────
     def cycle(self):
@@ -138,13 +164,19 @@ class Runner:
         except Exception:
             now_ms = int(time.time() * 1000) - 2_000
         self.refresh_universe(now_ms)
+        if self.is_mr:
+            try:   # BTC candles for the "spike correlated with BTC" check (P1 p125)
+                self.btc = BTCSeries(binance.closed_klines("BTCUSDT", "1m", 120, now_ms))
+            except Exception as e:
+                print(f"[btc] fetch failed: {e}", flush=True)
+                self.btc = None
         open_count = sum(1 for e in self.engines.values() if e.trade)  # pending + open count toward the cap
         for sym, sides in list(self.allowed.items()):
             try:
                 bars = binance.closed_klines(sym, "1m", self.cfg.history_bars, now_ms)
                 if len(bars) < 10:
                     continue
-                eng = self.engines.setdefault(sym, SymbolEngine(sym, self.cfg))
+                eng = self.engines.setdefault(sym, self.engine_cls(sym, self.cfg))
                 last = self.last_bar_t.get(sym)
                 # Only replay missed candles when there is an order/position to
                 # manage. A coin with nothing on starts from the newest candle,
@@ -159,7 +191,7 @@ class Runner:
                 for i in new_idx:
                     can_open = bool(sides) and open_count < self.cfg.max_open_positions
                     for ev in eng.on_bar(bars[:i + 1], ctx, allowed=sides, can_open=can_open):
-                        open_count += self.handle(ev)
+                        open_count += self.handle(ev, eng, now_ms)
                     # checkpoint after every candle so a crash never replays it
                     self.last_bar_t[sym] = bars[i].t
                     self.save()
@@ -185,9 +217,20 @@ class Runner:
         except Exception as e:
             print(f"[journal] {t.symbol} write failed: {e}", flush=True)
 
-    def handle(self, ev: dict) -> int:
+    def handle(self, ev: dict, eng=None, now_ms: int | None = None) -> int:
         t = ev["trade"]
         kind = ev["type"]
+        if kind == "signal" and self.is_mr and eng is not None:
+            # P1 p92: funding > 0.1R due within 90 min → don't take the trade
+            try:
+                rate, nxt = binance.premium_index(t.symbol)
+                stop_pct = abs(t.level - t.stop) / t.level * 100
+                if funding_blocks(rate * 100, nxt, now_ms or int(time.time() * 1000), stop_pct):
+                    print(f"[funding] {t.symbol} skipped: funding {rate * 100:+.3f}% due soon", flush=True)
+                    eng.trade = None
+                    return 0
+            except Exception as e:
+                print(f"[funding] {t.symbol} check failed ({e}) — taking the trade", flush=True)
         if kind == "signal":
             print(f"[signal] {t.symbol} {t.side} {t.entry_type} lvl={t.level} sl={t.stop} "
                   f"tp={t.target} score={t.score} {t.details}", flush=True)
@@ -211,10 +254,11 @@ class Runner:
 
 def main():
     ap = argparse.ArgumentParser()
+    ap.add_argument("--strategy", choices=sorted(STRATEGIES), default="momentum")
     ap.add_argument("--once", action="store_true")
     ap.add_argument("--no-journal", action="store_true")
     a = ap.parse_args()
-    r = Runner(Config(), journal=not a.no_journal)
+    r = Runner(journal=not a.no_journal, strategy=a.strategy)
     while True:
         try:
             r.cycle()

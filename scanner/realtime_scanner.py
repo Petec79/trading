@@ -16,8 +16,10 @@ def run(script, args=None):
     r = subprocess.run(cmd, capture_output=True, text=True, timeout=300, cwd=str(SCANNER_DIR.parent))
     return r.returncode == 0, r.stdout, r.stderr
 
-# MR scanner + Discord
-ok, out, err = run("velo_spicy_scanner.py", ["--journal"])
+# MR scanner — report only. Mean reversion paper trades are now opened and
+# closed by `momentum_v2.live --strategy mean_reversion`; the old --journal path
+# faded 24h movers with ATR brackets instead of the guide's three setups.
+ok, out, err = run("velo_spicy_scanner.py", [])
 print("MR:", "OK" if ok else f"FAIL — {err[:200]}")
 print(out.strip() if out else "")
 

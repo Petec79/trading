@@ -243,6 +243,8 @@ class Trade:
     net_r: Optional[float] = None
     journal_id: Optional[str] = None
     bars_waited: int = 0
+    setup: str = "momentum_breakout"
+    stop_kind: str = "swing"      # "swing" | "level" | "1R" (1R = equidistant from target, re-based on fill)
 
     @property
     def d(self) -> int:
@@ -409,6 +411,8 @@ class SymbolEngine:
             fill = bar.o * (1 + d * cfg.slippage)
             if (fill - t.stop) * d <= 0:
                 return self._cancel(t, bar, "gapped_through_stop", ev)
+            if not self._target_ok(t, fill):
+                return self._cancel(t, bar, "target_too_close_after_fill", ev)
             self._fill(t, fill, bar.t, ev)
             self._manage_open(t, bars, ev, fill_bar=True)
             return
@@ -421,15 +425,25 @@ class SymbolEngine:
             self._fill(t, fill, bar.t, ev)
             self._manage_open(t, bars, ev, fill_bar=True)
             return
-        if t.target is not None and (bar.h >= t.target if d == 1 else bar.l <= t.target):
-            return self._cancel(t, bar, "missed_ran_to_target", ev)
+        if t.target is not None:
+            trip = t.level + cfg.missed_fraction * (t.target - t.level)
+            if bar.h >= trip if d == 1 else bar.l <= trip:
+                return self._cancel(t, bar, "missed_ran_to_target", ev)
         if t.bars_waited >= cfg.limit_expiry_bars:
             return self._cancel(t, bar, "limit_expired", ev)
+
+    def _target_ok(self, t: Trade, price: float) -> bool:
+        if t.target is None or not self.cfg.min_target_pct:
+            return True
+        return (t.target - price) * t.d / price >= self.cfg.min_target_pct
 
     def _fill(self, t: Trade, price: float, ts: int, ev: list):
         t.status = "open"
         t.entry = price
         t.entry_t = ts
+        if t.stop_kind == "1R" and t.target is not None:
+            # stop equidistant from the target, measured from the real fill
+            t.stop = price - t.d * abs(t.target - price)
         t.risk = abs(price - t.stop)
         t.cur_stop = t.stop
         # Re-base on the actual fill: 1R targets move with the fill, and a

@@ -806,10 +806,6 @@ def run_scan(with_velo: bool = False, journal: bool = False):
     else:
         print("  → Bias is MIXED — both LONG and SHORT reversals viable")
     print()
-    print("  Your backtest best sessions (UTC):")
-    print("  • London AM (08-12 UTC):  83% WR — BEST")
-    print("  • Asian (00-08 UTC):      91% WR — very strong")
-    print("  • London PM (12-16 UTC):  monitor, mixed results")
 
     if funding_alerts:
         print()
