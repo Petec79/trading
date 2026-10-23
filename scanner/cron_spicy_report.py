@@ -83,7 +83,7 @@ def main():
 
     # ── Run Momentum scanner ────────────────────────────────────────────────
     print("  Momentum scanner...", flush=True)
-    momo = run_scanner("momentum_scanner.py", ["--journal", "--with-velo"])
+    momo = run_scanner("momentum_scanner.py", ["--with-velo"])  # report only; trades → momentum_v2
     if momo["success"]:
         print("    MOMO: OK", flush=True)
     else:

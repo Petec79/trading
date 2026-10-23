@@ -37,6 +37,9 @@ from typing import Optional
 
 DB_PATH = Path(__file__).parent / "journal.db"
 
+# Scanners whose trades are opened AND closed by their own engine.
+SELF_MANAGED_SCANNERS = {"momentum_v2"}
+
 # ── Schema ────────────────────────────────────────────────────────────────────
 
 INIT_SQL = """
@@ -294,6 +297,10 @@ class Journal:
         closed = []
 
         for trade in pending:
+            # Bots that manage their own exits candle-by-candle (e.g. momentum_v2)
+            # must not be closed here on a single 30-60 min price snapshot.
+            if trade.get("scanner") in SELF_MANAGED_SCANNERS:
+                continue
             coin = trade["coin"].upper().replace("USDT", "") + "USDT"
             if coin not in market_data:
                 continue
