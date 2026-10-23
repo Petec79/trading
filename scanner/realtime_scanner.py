@@ -23,7 +23,9 @@ print(out.strip() if out else "")
 
 import time; time.sleep(2)
 
-# Momentum scanner + Discord
-ok2, out2, err2 = run("momentum_scanner.py", ["--journal"])
+# Momentum scanner — report only. Paper trades for momentum are now opened and
+# closed by momentum_v2/live.py (runs every minute); the old --journal path
+# logged nothing (wrong field names) and had stop/target inverted.
+ok2, out2, err2 = run("momentum_scanner.py", ["--no-velo"])
 print("MOMO:", "OK" if ok2 else f"FAIL — {err2[:200]}")
 print(out2.strip() if out2 else "")

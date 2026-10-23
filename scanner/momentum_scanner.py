@@ -20,15 +20,29 @@ Usage:
   python3 momentum_scanner.py --with-velo  # Full + Velo browser (top gainers list)
 """
 
-import sys, json, time, math, requests
+import os
+import sys, json, time, math, requests, urllib.request
 from datetime import datetime, timezone
 from pathlib import Path
 
 # Discord integration
-DISCORD_SIGNALS_WH = "https://discord.com/api/webhooks/1506298465116885012/WxSGSSDl9I4I41Hf7lndzKOy_MBbNVCKHErAoOYLi6qnPuQQxKnaygX6ul-HxpN3ZJ9L"
-DISCORD_JOURNAL_WH  = "https://discord.com/api/webhooks/1506298466375045291/4dsrRrdlhKtUHZsE11iyKRvSMZ1IhSqA5T1TZ-aCKUScbbmIAWrlaCHusWE7yOkkBsRi"
+def _load_hermes_env():
+    """Webhook URLs live in ~/.hermes/.env (never in git)."""
+    p = os.path.expanduser("~/.hermes/.env")
+    if os.path.exists(p):
+        for line in open(p):
+            if "=" in line and not line.lstrip().startswith("#"):
+                k, v = line.strip().split("=", 1)
+                os.environ.setdefault(k, v.strip().strip('"').strip("'"))
+
+
+_load_hermes_env()
+DISCORD_SIGNALS_WH = os.environ.get("DISCORD_SIGNALS_WEBHOOK", "")
+DISCORD_JOURNAL_WH = os.environ.get("DISCORD_JOURNAL_WEBHOOK", "")
 
 def _discord_post(url, content):
+    if not url:
+        return
     try:
         data = json.dumps({"content": content}).encode()
         req = urllib.request.Request(url, data=data, headers={
