@@ -391,6 +391,27 @@ def test_live_weekly_cache_refreshes_on_monday():
     assert "period_start(now_ms, tf)" in Path(live.__file__).read_text()
 
 
+def test_hot_coins_ranked_by_last_5_minute_trades():
+    from momentum_v2 import live, binance
+    with tempfile.TemporaryDirectory() as d:
+        live.STATE_FILE = Path(d) / "s.json"
+        r = live.Runner(Config(), journal=False)
+        tick = [{"symbol": f"C{i}USDT", "count": 1000 - i} for i in range(20)]   # 24h order: C0..C19
+        recent = {f"C{i}USDT": i * 10 for i in range(20)}                          # 5m order: C19..C0
+        orig = binance.trades_last_minutes
+        try:
+            binance.trades_last_minutes = lambda s, m, now: recent[s]
+            hot = r.hot_by_recent_trades(tick, 0)
+            assert hot[:3] == ["C19USDT", "C18USDT", "C17USDT"] and len(hot) == 10
+
+            def boom(*a):
+                raise RuntimeError("down")
+            binance.trades_last_minutes = boom
+            assert r.hot_by_recent_trades(tick, 0)[:2] == ["C0USDT", "C1USDT"]   # falls back to 24h
+        finally:
+            binance.trades_last_minutes = orig
+
+
 if __name__ == "__main__":
     import traceback
     fails = 0

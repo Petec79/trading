@@ -83,6 +83,10 @@ class Config:
     universe_gainers: int = 15
     universe_losers: int = 15
     universe_trade_count: int = 10
+    # "Hot" = top by trades in the last 5 minutes (Orion's TRD 5M column, MR guide
+    # p88). Only the busiest N coins by 24h count are polled, to bound requests.
+    trade_count_minutes: int = 5
+    trade_count_candidates: int = 80
     universe_refresh_min: int = 15
 
     # ── Targets — p56-58 ─────────────────────────────────────────────────────

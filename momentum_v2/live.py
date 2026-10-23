@@ -19,6 +19,7 @@ import argparse
 import json
 import time
 import traceback
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 from . import binance
@@ -76,8 +77,7 @@ class Runner:
         by_chg = sorted(tick, key=lambda t: float(t["priceChangePercent"]), reverse=True)
         gainers = [t["symbol"] for t in by_chg[:cfg.universe_gainers] if float(t["priceChangePercent"]) > 0]
         losers = [t["symbol"] for t in by_chg[::-1][:cfg.universe_losers] if float(t["priceChangePercent"]) < 0]
-        hot = [t["symbol"] for t in sorted(tick, key=lambda t: int(t.get("count", 0)), reverse=True)
-               [:cfg.universe_trade_count]]
+        hot = self.hot_by_recent_trades(tick, now_ms)
         allowed: dict[str, set] = {}
         for s in gainers:
             allowed.setdefault(s, set()).add("long")
@@ -93,6 +93,32 @@ class Runner:
         self.universe_t = now_ms
         print(f"[universe] {len(gainers)} gainers, {len(losers)} losers, {len(hot)} hot → "
               f"{len(allowed)} coins", flush=True)
+
+    def hot_by_recent_trades(self, tick: list[dict], now_ms: int) -> list[str]:
+        """Top coins by trade count over the last 5 minutes (Orion "TRD 5M").
+        Falls back to the 24h count if Binance can't be polled."""
+        cfg = self.cfg
+        by_24h = sorted(tick, key=lambda t: int(t.get("count", 0)), reverse=True)
+        cands = [t["symbol"] for t in by_24h[:cfg.trade_count_candidates]]
+        counts: dict[str, int] = {}
+
+        def one(sym):
+            try:
+                return sym, binance.trades_last_minutes(sym, cfg.trade_count_minutes, now_ms)
+            except Exception:
+                return sym, None
+
+        with ThreadPoolExecutor(max_workers=8) as pool:
+            for sym, n in pool.map(one, cands):
+                if n is not None:
+                    counts[sym] = n
+        if len(counts) < len(cands) // 2:
+            print("[universe] 5m trade counts unavailable, using 24h counts", flush=True)
+            return cands[:cfg.universe_trade_count]
+        top = sorted(counts, key=counts.get, reverse=True)[:cfg.universe_trade_count]
+        print("[universe] hot (trades last 5m): " +
+              ", ".join(f"{s.replace('USDT', '')} {counts[s]:,}" for s in top), flush=True)
+        return top
 
     # ── levels ─────────────────────────────────────────────────────────────
     def context(self, sym: str, now_ms: int) -> LevelContext:

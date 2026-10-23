@@ -14,7 +14,7 @@ no longer writes trades.
 | Guide rule | Page | Implementation |
 |---|---|---|
 | 1-minute chart | p46, ch.7 | Wakes 3s after every minute, uses **closed** 1m candles only |
-| Coins: alt perps, top gainers → longs, worst losers → shorts, hot by trade count | p31-33, p58 | Binance USDT-M crypto perps (no stock/commodity perps, no majors), refreshed every 15 min |
+| Coins: alt perps, top gainers → longs, worst losers → shorts, hot by trade count | p31-33, p58 | Binance USDT-M crypto perps (no stock/commodity perps, no majors), refreshed every 15 min. "Hot" = top 10 by trades in the last 5 minutes (Orion's TRD 5M), counted from Binance 1m candles |
 | ≥ $100k / 1 min volume | p58 | Checked at signal time on the last hour's average |
 | Levels: previous 1h / 4h / day / week high (longs) or low (shorts) | p45, p48 | Previous **completed** candle of each timeframe; biggest level wins |
 | Entry trigger: 1 candle **close** through the level | p49-51 | A candle that closes through it after one that didn't. One attempt per level |

@@ -81,5 +81,13 @@ def server_time_ms() -> int:
     return int(_get("/fapi/v1/time")["serverTime"])
 
 
+def trades_last_minutes(symbol: str, minutes: int, now_ms: int) -> int:
+    """Number of trades in the last `minutes` CLOSED 1m candles (kline field 8).
+    This is Orion's "TRD (5M)" column."""
+    raw = _get("/fapi/v1/klines", {"symbol": symbol, "interval": "1m", "limit": minutes + 1})
+    done = [k for k in raw if int(k[0]) + 60_000 <= now_ms][-minutes:]
+    return sum(int(k[8]) for k in done)
+
+
 def tickers_24h() -> list[dict]:
     return _get("/fapi/v1/ticker/24hr")
