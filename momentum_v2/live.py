@@ -224,8 +224,9 @@ class Runner:
             # P1 p92: funding > 0.1R due within 90 min → don't take the trade
             try:
                 rate, nxt = binance.premium_index(t.symbol)
-                stop_pct = abs(t.level - t.stop) / t.level * 100
-                if funding_blocks(rate * 100, nxt, now_ms or int(time.time() * 1000), stop_pct):
+                ref = t.details.get("ref_entry") or t.level
+                stop_pct = abs(ref - t.stop) / ref * 100
+                if funding_blocks(rate * 100, nxt, now_ms or int(time.time() * 1000), stop_pct, t.side):
                     print(f"[funding] {t.symbol} skipped: funding {rate * 100:+.3f}% due soon", flush=True)
                     eng.trade = None
                     return 0

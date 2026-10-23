@@ -121,15 +121,19 @@ Journal scanner name: `mean_reversion_v2`.
 ### The three setups (part 1 chapter 7)
 | | Trigger | Entry | Target | Stop |
 |---|---|---|---|---|
-| **Failed breakout** p94-110 | Candle closes outside the 2h range, then one closes back inside (or a one-candle wick, part 2 p20). Needs range **and** volume not increasing | Range ≥ 3% → market, else limit on the failed level | Other side of the range | Next S/R level if it's roughly 1R away, else 1R |
-| **Fast spike reversal** p111-129 | Spike into a key level, close back inside, swing forms, candle closes through it. Skipped if BTC moved ≥ 0.5% the same way, the spike hit no key level, or structure took > 90 min to break | Spike > 1.5% → market, else limit on the broken swing | Origin of the spike | Spike extreme (1R if that gives R:R < 1, part 2 p37) |
-| **Partial fill** p130-139 | Candle hits the **exact** price of a prior swing high/low on ≥ 1.5× average volume; next candle closes the other way | Market | Recent swing (≥ 1%) | 1R |
+| **Failed breakout** p94-110 | Candle closes outside the 2h range, then one closes back inside (or a one-candle wick, part 2 p20). Both range edges must have **held price 3 times**. Needs a range **and** volume not increasing. Mildly rising volume is allowed when the range has lasted 4h+ (part 2 #2, #15, #20) | Range ≥ 3% → market, else limit on the failed level | Other side of the range | Next S/R level if it's roughly 1R away, else 1R |
+| **Fast spike reversal** p111-129 | Spike into a key level (previous 1h/4h/day/week high or low), close back inside, swing forms, candle closes through it. Skipped if BTC moved ≥ 0.5% the same way, the spike hit no key level, or structure took > 90 min to break | Spike > 1.5% → market, else limit on the broken swing | Origin of the spike | Spike extreme (1R if that gives R:R < 1, part 2 p37) |
+| **Partial fill** p130-139 | Candle hits the **exact** price of a prior swing high/low on ≥ 2× average volume; next candle closes the other way | Market | Recent swing (≥ 1%) | 1R (skipped if 1R would sit inside the tick candle) |
+
+On random-walk test data, which has no edge to find, the bot takes about 1 failed
+breakout and under 1 partial fill per coin per day, and loses a little after fees. That's the
+expected result for noise. An earlier, looser "edges held" rule produced about 8 a day.
 
 ### Common rules
 - **Skip small moves:** no trade if entry to target is under 1% (part 2 p16, p33).
 - **Cancelling limit orders:** cancelled once price covers 90% of the way to target, or after 60 min unfilled (part 2 p22).
 - **Exits:** at +0.9R the stop moves to +0.05R ("within 0R to 0.1R", part 2 p35), and trades are cut at 2 hours (part 2 p25).
-- **Funding:** skip if funding is above 0.1R and due within 90 min (part 1 p92). Live only.
+- **Funding:** skip if funding is above 0.1R and due within 90 min, and only when this side pays (part 1 p92). Live only.
 - **Return-bucket bias:** if 80%+ of coins are up, it only takes longs; if 80%+ are down, only shorts (part 1 p81-82). Live only.
 
 ### Not automated
@@ -140,7 +144,7 @@ Journal scanner name: `mean_reversion_v2`.
 
 ### Run / backtest
 ```bash
-python3 momentum_v2/tests/test_mean_reversion.py                 # 21 tests
+python3 momentum_v2/tests/test_mean_reversion.py                 # 26 tests
 python3 -m momentum_v2.live --strategy mean_reversion --once --no-journal
 cp momentum_v2/deploy/mean-reversion-v2.service ~/.config/systemd/user/
 systemctl --user daemon-reload && systemctl --user enable --now mean-reversion-v2

@@ -330,6 +330,77 @@ def test_1R_stop_is_rebased_on_the_market_fill():
     assert (t.stop - t.entry) == pytest.approx(t.entry - t.target, abs=1e-6)
 
 
+# ── regressions from independent review ─────────────────────────────────────
+def test_spike_volume_does_not_count_against_volume_check():
+    c, bars, ctx, piv = spike_setup()
+    for j in range(20):                                   # chop for 20 min before structure breaks
+        hi = 102.5 if j % 2 else 102.3
+        add(bars, bars[-1].c, hi, 102.1, hi - 0.1, 1000)
+    add(bars, bars[-1].c, 102.3, 102.0, 102.2, 1000)
+    add(bars, 102.2, 102.35, 102.1, 102.3, 1000)
+    e = MeanReversionEngine("TESTUSDT", c)
+    for k in range(len(bars) - 2, len(bars) + 1):
+        e.on_bar(bars[:k], ctx)
+    add(bars, 102.3, 102.3, 101.5, 101.6, 1500)
+    e.on_bar(bars, ctx)
+    assert e.trade and e.trade.setup == "fast_spike" and e.trade.criteria["volume_not_increasing"]
+
+
+def test_btc_veto_works_for_a_one_candle_spike():
+    c = cfg()
+    bars = range_bars(262, lo=100.0, hi=100.8)
+    while bars[-1].c > 100.2:
+        bars.pop()
+    add(bars, bars[-1].c, 103.2, min(b.l for b in bars[-3:]) * 0.999, 103.0, 20000)
+    e_i = len(bars) - 1
+    for o, h, l, cl, v in ((103.0, 103.0, 102.3, 102.4, 3000), (102.4, 102.6, 101.9, 102.0, 2000),
+                           (102.0, 102.5, 101.95, 102.4, 1500), (102.4, 102.45, 102.1, 102.2, 1200)):
+        add(bars, o, h, l, cl, v)
+    ctx = ctx_for(bars, hi=103.0)
+    btc = [Bar(b.t, 60000, 60010, 59990, 60000, 1) for b in bars]
+    btc[e_i] = Bar(bars[e_i].t, 60000, 61300, 60000, 61200, 1)        # BTC +2% in the same minute
+    ctx.btc = BTCSeries(btc)
+    eng = MeanReversionEngine("TESTUSDT", c)
+    eng.on_bar(bars, ctx)
+    add(bars, 102.2, 102.25, 101.5, 101.6, 1500)
+    eng.on_bar(bars, ctx)
+    assert eng.trade is None
+
+
+def test_spike_that_stops_short_of_an_older_high_is_still_traded():
+    c, bars, ctx, piv = spike_setup()
+    j = len(bars) - 60
+    b = bars[j]
+    bars[j] = Bar(b.t, b.o, 103.25, b.l, b.c, b.v, b.qv)                # older wick set the level
+    ctx.hi = 103.25
+    e = MeanReversionEngine("TESTUSDT", c)
+    e.on_bar(bars, ctx)
+    add(bars, 102.2, 102.25, 101.5, 101.6, 1500)
+    e.on_bar(bars, ctx)
+    assert e.trade and e.trade.setup == "fast_spike"
+
+
+def test_funding_only_blocks_the_side_that_pays():
+    now = 0
+    assert funding_blocks(0.5, now + 10 * 60_000, now, 2.0, "long") is True     # longs pay positive funding
+    assert funding_blocks(0.5, now + 10 * 60_000, now, 2.0, "short") is False   # shorts receive it
+    assert funding_blocks(-0.5, now + 10 * 60_000, now, 2.0, "short") is True
+
+
+def test_failed_breakout_needs_edges_that_held():
+    c = cfg()
+    bars = ending_at_top(range_bars(280))
+    # one fresh 2h high that was never tested before → not a range edge that "held"
+    j = len(bars) - 30
+    b = bars[j]
+    bars[j] = Bar(b.t, b.o, 103.0, b.l, b.c, b.v, b.qv)
+    add(bars, bars[-1].c, 103.2, bars[-1].c, 103.1)
+    add(bars, 103.1, 103.1, 102.6, 102.7)
+    e = MeanReversionEngine("TESTUSDT", c)
+    ev = e.on_bar(bars, ctx_for(bars))
+    assert not any(x["type"] == "signal" and x["trade"].setup == "failed_breakout" for x in ev)
+
+
 if __name__ == "__main__":
     import traceback
     fails = 0

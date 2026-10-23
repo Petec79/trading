@@ -44,7 +44,7 @@ from typing import Optional
 
 from .config import Config
 from .core import (Bar, LevelContext, SymbolEngine, Trade, efficiency_ratio,
-                   is_pivot_high, is_pivot_low, resample_n, staircase)
+                   is_pivot_high, is_pivot_low, pivots, resample_n, staircase)
 
 
 @dataclass
@@ -75,6 +75,7 @@ class MRConfig(Config):
     # more (P2 p63): both checks must pass.
     vol_regime_max_ratio: float = 1.10   # last hour avg vs the hour 3-4h ago
     vol_recent_max_ratio: float = 1.15   # last hour vs the hour before
+    vol_unclear_max_ratio: float = 1.30  # "slightly increasing / unclear" (P2 #2, #20) — not clearly rising
 
     # ── V3 ranging (P1 p36 MA-cross tip, P1 p84) ─ ASSUMPTIONS ───────────────
     range_bars: int = 120
@@ -92,10 +93,16 @@ class MRConfig(Config):
     btc_corr_pct: float = 0.005          # BTC moved ≥ 0.5% the same way during the spike → skip
     tt_lookback_bars: int = 360          # swing highs from the last 6h are "relevant"
     tt_swing_strength: int = 2
-    tt_vol_mult: float = 1.5             # top-tick candle volume ≥ 1.5× 1h average
+    tt_vol_mult: float = 2.0             # top-tick candle volume ≥ 2× 1h average (P1 p138: more = better)
 
-    history_bars: int = 300
+    history_bars: int = 400              # ≥ 6h so duration-of-regime can reach the 4h exception
     max_open_positions: int = 5
+    # P1 p108 "the same S/R levels are SUCCESSFULLY holding price": each edge needs
+    # ≥ 3 swings within 5% of the range height (on random-walk data this cut noise
+    # failed-breakout signals from ~8/day to ~1/day per coin).
+    fb_min_edge_tests: int = 3
+    fb_edge_band: float = 0.05
+    fb_min_range_hours: int = 0          # optional: range must have lasted this long
 
 
 # ── regime variables ─────────────────────────────────────────────────────────
@@ -201,7 +208,9 @@ class MeanReversionEngine(SymbolEngine):
     def _score(self, bars, d, spike_found: bool, approach_end: int) -> tuple[int, dict, dict, bool]:
         cfg: MRConfig = self.cfg
         window = bars[approach_end - cfg.range_bars - cfg.spike_window_bars:approach_end - cfg.spike_window_bars]
-        v2, d2 = volume_not_increasing(bars, cfg)
+        # volume up to the approach: the spike's own candles are excluded (they are the
+        # last 10 of this slice), so a later break of structure can't count them
+        v2, d2 = volume_not_increasing(bars[:approach_end + 1], cfg)
         v3, d3 = is_ranging(window, d, cfg)
         crit = {"fast_spike": spike_found, "volume_not_increasing": v2, "ranging": v3}
         score = sum(crit.values())
@@ -231,6 +240,7 @@ class MeanReversionEngine(SymbolEngine):
             return None
         if (ref_entry - stop) * d <= 0:
             return None
+        details = {**details, "ref_entry": ref_entry}
         return Trade(symbol=self.symbol, side=side, level_tf=setup, level=level, signal_t=now,
                      entry_type=entry_type, stop=stop, target=target, target_kind=target_kind,
                      score=score, criteria=crit, details=details, setup=setup, stop_kind=stop_kind)
@@ -248,6 +258,17 @@ class MeanReversionEngine(SymbolEngine):
             w = bars[s - cfg.fb_range_bars:s]
             return max(b.h for b in w), min(b.l for b in w)
 
+        def held(s, r_hi, r_lo):
+            """P1 p108: 'the same S/R levels are successfully holding price' —
+            both edges must have been tested (swing within 15% of the range
+            height) at least fb_min_edge_tests times inside the window."""
+            w = bars[s - cfg.fb_range_bars:s]
+            band = cfg.fb_edge_band * (r_hi - r_lo)
+            hs, ls = pivots(w, 2)
+            top = sum(1 for _, p in hs if p >= r_hi - band)
+            bot = sum(1 for _, p in ls if p <= r_lo + band)
+            return top >= cfg.fb_min_edge_tests and bot >= cfg.fb_min_edge_tests
+
         def outside(b, edge):
             return b.c < edge if d == 1 else b.c > edge
 
@@ -256,7 +277,7 @@ class MeanReversionEngine(SymbolEngine):
         edge = r_lo if d == 1 else r_hi
         wick = cur.l < edge if d == 1 else cur.h > edge
         if wick and not outside(cur, edge) and not outside(bars[i - 1], edge):
-            return edge, r_hi, r_lo, i
+            return (edge, r_hi, r_lo, i) if held(i, r_hi, r_lo) else None
         # (2) one or more candles CLOSED outside, and this candle closed back inside (P1 p96-97)
         for m in range(1, cfg.fb_max_outside_bars + 1):
             s = i - m
@@ -267,6 +288,8 @@ class MeanReversionEngine(SymbolEngine):
             if outside(cur, edge) or outside(bars[s - 1], edge):
                 continue
             if all(outside(b, edge) for b in bars[s:i]):
+                if not held(s, r_hi, r_lo):
+                    return None
                 rng = range(s, i + 1)
                 ext_i = min(rng, key=lambda k: bars[k].l) if d == 1 else max(rng, key=lambda k: bars[k].h)
                 return edge, r_hi, r_lo, ext_i
@@ -289,8 +312,14 @@ class MeanReversionEngine(SymbolEngine):
         self.attempted[key] = cur.t
         spike = find_spike(bars, ext_i, -d, cfg)
         score, crit, det, ok = self._score(bars, d, spike is not None, ext_i)
-        # P1 p108: failed breakouts REQUIRE a range AND volume that is not increasing
-        if not ok or not (crit["ranging"] and crit["volume_not_increasing"]):
+        # P1 p108: failed breakouts REQUIRE a range AND volume that is not increasing.
+        # P2 trades #2, #15, #20 relax the volume condition when the range has
+        # lasted 4h+ ("high DOR can compensate for unclear volume", P2 p13).
+        if det["range_hours"] < cfg.fb_min_range_hours:
+            return None
+        mild = det.get("vol_vs_regime_start", 9) <= cfg.vol_unclear_max_ratio
+        long_range = det["range_hours"] >= cfg.dor_exception_hours and mild
+        if not ok or not crit["ranging"] or not (crit["volume_not_increasing"] or long_range):
             return None
         target = r_hi if d == 1 else r_lo
         rng = (r_hi - r_lo) / r_lo
@@ -302,6 +331,8 @@ class MeanReversionEngine(SymbolEngine):
             stop, sk = ref - d * abs(target - ref), "1R"
             if (extreme - stop) * d < 0:
                 stop, sk = extreme * (1 - d * 0.0005), "level"
+        if sk == "1R":
+            sk = "1R_fixed"                 # fixed at signal so the wick guard still holds after a fill
         return self._new_trade(side, "failed_breakout", edge, ref, entry_type, stop, sk, target,
                                "range_opposite", score, crit,
                                {**det, "range_pct": round(rng * 100, 2), "spike": spike}, now)
@@ -315,22 +346,32 @@ class MeanReversionEngine(SymbolEngine):
         cur, prev = bars[i], bars[i - 1]
         now = cur.t + cfg.bar_ms
         lo = max(cfg.range_bars + cfg.spike_window_bars, i - cfg.spike_max_bos_bars)
-        # the spike extreme = the most extreme price of the last 90 min, before this candle
-        cand = range(lo, i)
-        if not cand:
+        # Candidate extremes: candles in the last 90 min that no later candle
+        # (including this one) has exceeded — newest first. The spike can stop
+        # short of an older high (P1 p111 "fails to break through the level").
+        e = sp = L = None
+        run_ext = cur.h if ds == 1 else cur.l
+        for k in range(i - 1, lo - 1, -1):
+            x = bars[k].h if ds == 1 else bars[k].l
+            if (x <= run_ext) if ds == 1 else (x >= run_ext):
+                continue
+            run_ext = x
+            prev_x = bars[k - 1].h if ds == 1 else bars[k - 1].l
+            if (prev_x >= x) if ds == 1 else (prev_x <= x):
+                continue                     # not a peak: the move topped out on an earlier candle
+            cand = find_spike(bars, k, ds, cfg)
+            if not cand:
+                continue
+            # P1 p129: the spike must have hit a key level
+            lvl = self._key_level_hit(ctx, ds, cand["origin"], x, bars[k].t)
+            if lvl is None:
+                continue
+            e, sp, L = k, cand, lvl
+            break
+        if e is None:
             return None
-        e = max(cand, key=lambda k: bars[k].h) if ds == 1 else min(cand, key=lambda k: bars[k].l)
         ext = bars[e].h if ds == 1 else bars[e].l
-        if (cur.h > ext) if ds == 1 else (cur.l < ext):
-            return None
-        sp = find_spike(bars, e, ds, cfg)
-        if not sp:
-            return None
-        # P1 p129: the spike must have hit a key level (HTF high/low or 1h swing)
         t_e = bars[e].t
-        L = self._key_level_hit(ctx, ds, sp["origin"], ext, t_e)
-        if L is None:
-            return None
         # a swing formed after the extreme (swing low for an up-spike)
         s = cfg.swing_strength
         piv = None
@@ -358,7 +399,7 @@ class MeanReversionEngine(SymbolEngine):
         if not ok:
             return None
         origin = sp["origin"]
-        size = sp["size_pct"] / 100
+        size = abs(ext - origin) / origin               # P1 p118: origin → extreme
         entry_type = "market" if size > cfg.spike_market_pct else "limit"
         ref = cur.c if entry_type == "market" else piv
         stop, sk = ext * (1 + ds * 0.0005), "level"        # just beyond the spike extreme
@@ -372,11 +413,10 @@ class MeanReversionEngine(SymbolEngine):
                                now)
 
     def _key_level_hit(self, ctx, ds, origin, ext, t) -> Optional[float]:
-        """A key level (prev 1h/4h/1d/1w high/low or a 1h swing) that the spike
-        ran into: in the far half of the spike and reached (within tolerance)."""
+        """A major level (previous 1h/4h/day/week high or low) that the spike ran
+        into: in the far half of the spike and reached (within tolerance)."""
         tol = self.cfg.level_touch_tol
-        side = "high" if ds == 1 else "low"
-        levels = ctx._all_levels(t, side) if hasattr(ctx, "_all_levels") else []
+        levels = []
         for tf in self.cfg.level_timeframes:
             b = ctx.prev(tf, t)
             if b:
@@ -393,7 +433,7 @@ class MeanReversionEngine(SymbolEngine):
         if not btc:
             return None
         seg = [b for b in btc.get_range(t0, t1)]
-        if len(seg) < 2:
+        if not seg:
             return None
         return (seg[-1].c - seg[0].o) / seg[0].o
 
@@ -452,8 +492,8 @@ class MeanReversionEngine(SymbolEngine):
         if target is None:
             return None
         stop, sk = ref - d * abs(target - ref), "1R"       # P1 p136: 1R equidistant
-        if (stop - P) * d >= 0:                              # 1R would sit inside the tick → just beyond it
-            stop, sk = P * (1 - d * 0.0005), "level"
+        if (stop - P) * d >= 0:
+            return None                                      # a 1R stop would sit inside the tick candle
         return self._new_trade(side, "partial_fill", P, ref, "market", stop, sk, target,
                                "recent_swing", score, crit,
                                {**det, "tick_vol_x": round(tick.v / avg_v, 2), "spike": spike}, now)
@@ -473,10 +513,15 @@ class BTCSeries:
         return self.bars[a:b]
 
 
-def funding_blocks(rate: float, next_funding_ms: int, now_ms: int, stop_dist_pct: float) -> bool:
-    """P1 p92: skip if |funding| > 0.1R and the payment is due within 90 minutes."""
+def funding_blocks(rate: float, next_funding_ms: int, now_ms: int, stop_dist_pct: float,
+                   side: str | None = None) -> bool:
+    """P1 p92: skip if the funding payment is > 0.1R and due within 90 minutes.
+    rate and stop_dist_pct are in %. With `side`, only block when this side PAYS
+    (positive funding: longs pay shorts; negative: shorts pay longs)."""
     if next_funding_ms is None:
         return False
     if next_funding_ms - now_ms > 90 * 60_000:
+        return False
+    if side == "long" and rate <= 0 or side == "short" and rate >= 0:
         return False
     return abs(rate) > 0.1 * stop_dist_pct
