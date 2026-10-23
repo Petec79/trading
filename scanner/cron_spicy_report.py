@@ -72,7 +72,7 @@ def main():
 
     # ── Run MR scanner ──────────────────────────────────────────────────────
     print("  MR scanner...", flush=True)
-    mr = run_scanner("velo_spicy_scanner.py", ["--journal", "--with-velo"])
+    mr = run_scanner("velo_spicy_scanner.py", ["--with-velo"])  # report only; trades → mean_reversion_v2
     if mr["success"]:
         print("    MR: OK", flush=True)
     else:

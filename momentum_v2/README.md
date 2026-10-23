@@ -9,7 +9,11 @@ no longer writes trades.
 
 **Paper only.** Nothing here sends orders to an exchange.
 
-## What it does, rule by rule
+This folder also holds the **mean reversion** rebuild (`mean_reversion.py`,
+[section below](#mean-reversion-v2)). Both bots share one engine (`core.py`),
+one live runner and one backtester. You choose which one runs with `--strategy`.
+
+## Momentum: what it does, rule by rule
 
 | Guide rule | Page | Implementation |
 |---|---|---|
@@ -89,3 +93,63 @@ live bot only trades the day's movers.
 
 Caveat: the backtest trades every coin you give it, every day. The live bot
 only trades a coin while it is a top mover, and caps open positions at 5.
+
+
+---
+
+## Mean reversion v2
+
+Rebuild from @spicyofc's *Mean Reversion Trading Strategy Guide* (part 1 =
+theory, part 2 = 50 trade examples). It replaces the `--journal` path in
+`scanner/velo_spicy_scanner.py`, which shorted every coin up on the day and
+bought every coin down, with ATR-sized stops and targets. None of the guide's
+three setups or its regime check were in that code. The scanner still
+produces its report, but it no longer writes trades.
+
+Journal scanner name: `mean_reversion_v2`.
+
+### Regime check (part 1 p12, part 2 p7)
+| Variable | Good for reversals | Implementation (`ASSUMPTION` values in `MRConfig`) |
+|---|---|---|
+| Approach into the level | Fast spike, not a slow grind | Last 5 candles moved ≥ 1% and ≥ 5× the average 2h candle, with a candle at ≥ 3× median volume |
+| Volume | Flat or decreasing, not increasing | Last hour ≤ 1.10× the hour at the start of the regime and ≤ 1.15× the previous hour (recent data weighted more, part 2 p63) |
+| Price action on the left | Sideways range (or a choppy trend in the trade's direction, p84) | ≥ 6 crosses of the 20-MA in 2h and a low efficiency ratio |
+
+- **Scoring:** 3/3 or 2/3 → take. 1/3 → only if the range has lasted 4h+ (part 2 p13). 0/3 → never.
+- **Veto:** a 2h staircase against the trade blocks it whatever the score (part 2 bad trades #3-#25).
+
+### The three setups (part 1 chapter 7)
+| | Trigger | Entry | Target | Stop |
+|---|---|---|---|---|
+| **Failed breakout** p94-110 | Candle closes outside the 2h range, then one closes back inside (or a one-candle wick, part 2 p20). Both range edges must have **held price 3 times**. Needs a range **and** volume not increasing. Mildly rising volume is allowed when the range has lasted 4h+ (part 2 #2, #15, #20) | Range ≥ 3% → market, else limit on the failed level | Other side of the range | Next S/R level if it's roughly 1R away, else 1R |
+| **Fast spike reversal** p111-129 | Spike into a key level (previous 1h/4h/day/week high or low), close back inside, swing forms, candle closes through it. Skipped if BTC moved ≥ 0.5% the same way, the spike hit no key level, or structure took > 90 min to break | Spike > 1.5% → market, else limit on the broken swing | Origin of the spike | Spike extreme (1R if that gives R:R < 1, part 2 p37) |
+| **Partial fill** p130-139 | Candle hits the **exact** price of a prior swing high/low on ≥ 2× average volume; next candle closes the other way | Market | Recent swing (≥ 1%) | 1R (skipped if 1R would sit inside the tick candle) |
+
+On random-walk test data, which has no edge to find, the bot takes about 1 failed
+breakout and under 1 partial fill per coin per day, and loses a little after fees. That's the
+expected result for noise. An earlier, looser "edges held" rule produced about 8 a day.
+
+### Common rules
+- **Skip small moves:** no trade if entry to target is under 1% (part 2 p16, p33).
+- **Cancelling limit orders:** cancelled once price covers 90% of the way to target, or after 60 min unfilled (part 2 p22).
+- **Exits:** at +0.9R the stop moves to +0.05R ("within 0R to 0.1R", part 2 p35), and trades are cut at 2 hours (part 2 p25).
+- **Funding:** skip if funding is above 0.1R and due within 90 min, and only when this side pays (part 1 p92). Live only.
+- **Return-bucket bias:** if 80%+ of coins are up, it only takes longs; if 80%+ are down, only shorts (part 1 p81-82). Live only.
+
+### Not automated
+- **News check (part 1 p123-124):** the author searches X for news before trading a spike. The bot can't, so news-driven spikes will get traded. This is the biggest gap.
+- **All-time highs/lows (part 2 p49):** the guide says to avoid reversals there. The bot doesn't know where they are.
+- **Order book checks:** the order-book-thickness check and round-number levels need the order book.
+- **Huge spikes (20%+):** the option to take a smaller target instead of the origin isn't automated.
+
+### Run / backtest
+```bash
+python3 momentum_v2/tests/test_mean_reversion.py                 # 26 tests
+python3 -m momentum_v2.live --strategy mean_reversion --once --no-journal
+cp momentum_v2/deploy/mean-reversion-v2.service ~/.config/systemd/user/
+systemctl --user daemon-reload && systemctl --user enable --now mean-reversion-v2
+python3 -m momentum_v2.backtest --strategy mean_reversion \
+    --symbols PEPEUSDT,ARCUSDT,FARTCOINUSDT,COOKIEUSDT --start 2026-08-01 --end 2026-10-20
+```
+The backtest loads BTCUSDT as well, for the correlation check. Funding and
+return-bucket bias are live-only, so the backtest leaves them out.

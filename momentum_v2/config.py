@@ -43,6 +43,11 @@ class Config:
     # Distance ≥ 3%            → market order right after the candle close.
     limit_vs_market_pct: float = 0.03
     limit_expiry_bars: int = 30             # ASSUMPTION: cancel unfilled limit after 30 min
+    # Cancel an unfilled limit once price has covered this share of the way
+    # from the level to the target (momentum: the whole way).
+    missed_fraction: float = 1.0
+    # Skip trades whose entry→target move is smaller than this (0 = no check).
+    min_target_pct: float = 0.0
 
     # ── Quality criteria — p60 "Trade Quality Cheat Sheet" ───────────────────
     # C1 slow grind into the level (NOT a fast spike, p36)

@@ -38,7 +38,7 @@ from typing import Optional
 DB_PATH = Path(__file__).parent / "journal.db"
 
 # Scanners whose trades are opened AND closed by their own engine.
-SELF_MANAGED_SCANNERS = {"momentum_v2"}
+SELF_MANAGED_SCANNERS = {"momentum_v2", "mean_reversion_v2"}
 
 # ── Schema ────────────────────────────────────────────────────────────────────
 
