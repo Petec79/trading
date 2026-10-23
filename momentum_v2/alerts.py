@@ -177,6 +177,11 @@ class Notifier:
                         f"re-based on the fill price, move yours to match")
             if a_tgt is not None and t.target is not None and abs(a_tgt - t.target) > 1e-12:
                 txt += f"\n⚠️ TARGET CHANGED: now {_px(t.target)} (signal said {_px(a_tgt)})"
+            if t.journal_id:
+                sz = sizing(t.entry, t.cur_stop)
+                txt += (f"\nTook it? Log yours (put in YOUR fill):\n"
+                        f"python3 journal/journal.py manual-open --signal {t.journal_id} --coin {sym} "
+                        f"--direction {t.side} --entry YOUR_FILL --stop {t.cur_stop:g} --size-usd {sz['notional']:.0f}")
         elif kind == "cancel":
             reason = {"missed_ran_to_target": "price ran most of the way to target without filling",
                       "limit_expired": "not filled in time",
