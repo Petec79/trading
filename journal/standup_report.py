@@ -1,19 +1,19 @@
 #!/usr/bin/env python3
 """
-PICO Performance Report — Standup-format paper-trading summary.
-===============================================================
+Standup trading report — paper-trading summary for Midas's daily standup.
+=========================================================================
 
 Purpose
 -------
-Produce the PICO Trading section the daily standup cron (`b2c878f8eb76`)
+Produce the Trading section the daily standup cron (`b2c878f8eb76`)
 prepends to its CEO summary. Designed to never go missing: it discovers
-the canonical PICO journal DB across known locations and falls back to a
+the trading journal DB across known locations and falls back to a
 direct sqlite read if the wrapper module is unreachable.
 
 Data source (single source of truth)
 ------------------------------------
 SQLite database at `/home/openclaw/workspace/journal/journal.db`
-(the canonical Spicy / PICO paper-trading journal). Schema: `trades` and
+(the paper-trading journal for the momentum_v2 / mean_reversion_v2 bots). Schema: `trades` and
 `sessions` tables; see `/home/openclaw/workspace/journal/journal.py`
 for the Journal class that writes to it.
 
@@ -26,19 +26,19 @@ inline. Same numbers either way.
 
 Usage
 -----
-    python journal/performance_report.py --telegram    # standup default
-    python journal/performance_report.py --dry-run    # emit report to stdout, exit 0
-    python journal/performance_report.py --json       # machine-readable report
+    python3 journal/standup_report.py --telegram    # standup default
+    python3 journal/standup_report.py --dry-run     # emit report to stdout, exit 0
+    python3 journal/standup_report.py --json        # machine-readable report
 
 Exit codes
 ----------
-0  — always. Empty-state uses output 'PICO: no trades recorded'.
+0  — always. Empty-state uses output 'Trading: no trades recorded'.
 1  — only on sqlite/programming error (db missing AND unreachable parent).
 
 Flags
 -----
 --telegram   Render the report body expected by the standup cron (default if no
-            other output flag). Output prepends the '**PICO Trading**' header.
+            other output flag). Output prepends the '**Trading (paper)**' header.
 --dry-run    Identical to --telegram; named for CEO_PLAYBOOK production-scripts
             standard. Does not post to Telegram/Discord.
 --json       Emit the report as JSON (state_source, trade_count, etc.) for
@@ -66,12 +66,10 @@ THIS_DIR = Path(__file__).resolve().parent
 # readable `journal.db`. Keeps this script decoupled from whichever path the
 # standup's relative `journal/performance_report.py` happens to resolve to.
 _JOURNAL_ROOTS: tuple[Path, ...] = (
-    THIS_DIR.parent.parent / "workspace" / "journal",   # /home/openclaw/workspace/journal
+    THIS_DIR,                                            # journal/ (this script lives next to journal.db)
     Path("/home/openclaw/workspace/journal"),
     Path("/home/openclaw/midas/journal"),
     Path("/home/openclaw/journal"),
-    THIS_DIR / "journal",                                # pico-bot/journal/journal
-    THIS_DIR,                                            # pico-bot/journal (fallback, no db)
 )
 
 
@@ -135,7 +133,7 @@ def _query_stats(db: Path, scanner: str | None) -> dict[str, Any]:
 
 def _shared_stats():
     """journal/stats.py — the one set of numbers every report uses. None if unavailable."""
-    for root in (THIS_DIR.parent.parent / "journal", *_JOURNAL_ROOTS):   # repo layout first, then the VPS paths
+    for root in _JOURNAL_ROOTS:
         if (root / "stats.py").exists():
             sys.path.insert(0, str(root))
             try:
@@ -204,9 +202,9 @@ def _signal_stale(newest_ts: str | None, now: datetime, stale_hours: int) -> dic
 def _format_telegram(stats: dict[str, Any], stale: dict[str, Any],
                      state_source: str) -> str:
     if stats["total_trades"] == 0:
-        return "PICO: no trades recorded"
+        return "Trading: no trades recorded"
     lines = [
-        "**PICO Trading**",
+        "**Trading (paper)**",
         f"Trades: {stats['total_trades']} ({stats['closed']} closed, "
         f"{stats['open_positions']} open)",
         f"WR: {stats['win_rate']}% ({stats['wins']}W / {stats['losses']}L) · "
@@ -246,7 +244,7 @@ def main(argv: list[str] | None = None) -> int:
     if argv is None:
         argv = sys.argv[1:]
     parser = argparse.ArgumentParser(
-        description="PICO Performance Report (standup-ready, never-missing).",
+        description="Standup trading report (paper bots, never-missing).",
     )
     parser.add_argument(
         "--telegram", action="store_true",
@@ -296,7 +294,7 @@ def main(argv: list[str] | None = None) -> int:
                 "as_of": now.isoformat(),
             }, indent=2, sort_keys=True))
         else:
-            print("PICO: no trades recorded")
+            print("Trading: no trades recorded")
         return 0
 
     raw = _query_stats(db, scanner=args.scanner)
@@ -319,5 +317,5 @@ if __name__ == "__main__":
     try:
         sys.exit(main())
     except sqlite3.DatabaseError as exc:
-        print(f"PICO: db error ({type(exc).__name__}): {exc}", file=sys.stderr)
+        print(f"Trading: db error ({type(exc).__name__}): {exc}", file=sys.stderr)
         sys.exit(1)

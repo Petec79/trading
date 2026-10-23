@@ -1,6 +1,6 @@
 """
 One set of trade statistics for every report (journal.py, performance_report.py,
-weekly_report.py, the PICO standup section). Previously each report computed
+weekly_report.py, standup_report.py). Previously each report computed
 its own numbers and they disagreed.
 
 Conventions

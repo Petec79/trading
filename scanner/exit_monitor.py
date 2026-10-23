@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-PICO Exit Monitor — Check pending trades against live prices.
+Exit Monitor — Check pending trades against live prices.
 ================================================================
 Run via cron (hourly) or manually. Fetches current Binance prices
 for all open journal trades and checks for SL/TP hits.
@@ -173,7 +173,7 @@ def format_closed_report(closed: list[dict], open_trades: list, prices: dict) ->
 
 
 def main():
-    parser = argparse.ArgumentParser(description="PICO Exit Monitor")
+    parser = argparse.ArgumentParser(description="Exit Monitor")
     parser.add_argument("--execute", action="store_true",
                         help="Execute closes (default: dry-run)")
     parser.add_argument("--report", action="store_true",

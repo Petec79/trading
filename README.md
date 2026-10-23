@@ -4,7 +4,7 @@ Trading bots, scanners, strategies and journal scripts.
 
 ## Layout
 
-- `journal/` — PICO/Spicy paper-trading journal: `Journal` class (`journal.py`), performance report (`performance_report.py`), weekly alpha report (`weekly_report.py`).
+- `journal/` — paper-trading journal: `Journal` class (`journal.py`), performance report (`performance_report.py`), weekly report (`weekly_report.py`), standup section (`standup_report.py`).
 - `strategies/`, `scanner/`, `polymarket-bots/`, `pico-bot/`, `ibiza-concierge/` and other workspace subfolders live on the VPS, not in this repo.
 
 ## Not in this repo

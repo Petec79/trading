@@ -48,7 +48,7 @@ def discord(kind: str, content: str):
 
 
 class JournalBridge:
-    """Writes fills and exits into the shared PICO journal (journal/journal.db)."""
+    """Writes fills and exits into the shared trading journal (journal/journal.db)."""
 
     def __init__(self, db_path: str | None = None, scanner: str = SCANNER_NAME):
         sys.path.insert(0, str(REPO_ROOT))

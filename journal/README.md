@@ -29,7 +29,7 @@ If those pass, it shows what's in the old file and asks you to type `DELETE`. It
 python3 journal/performance_report.py                     # all time, by bot / setup / side / score / exit reason
 python3 journal/performance_report.py --weeks 1 --telegram
 python3 journal/weekly_report.py --send                   # Telegram + Discord; cron: 5 8 * * 1
-python3 pico-bot/journal/performance_report.py --telegram # PICO section of Midas's standup (same numbers)
+python3 journal/standup_report.py --telegram           # trading section of Midas's standup (same numbers)
 python3 -m momentum_v2.news_report                        # fast spikes: news verdict / hype vs result
 ```
 

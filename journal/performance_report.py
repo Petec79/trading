@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Journal performance report — every number from journal/stats.py (shared with
-the weekly report and the PICO standup), so the reports agree.
+the weekly report and the standup report), so the reports agree.
 
 Usage:
     python journal/performance_report.py                          # all time, full detail

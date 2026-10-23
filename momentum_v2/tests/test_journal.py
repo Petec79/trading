@@ -154,13 +154,13 @@ def test_reports_run_and_agree():
     assert out.returncode == 0, out.stderr
     exp = S.summarize(j._all_rows())["expectancy_r"]
     assert f"exp {exp:+.3f}R" in out.stdout and "By setup" in out.stdout
-    spec = importlib.util.spec_from_file_location("pico_perf", ROOT / "pico-bot/journal/performance_report.py")
-    pico = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(pico)
-    st = pico._compute_stats(pico._query_stats(db, None))
+    spec = importlib.util.spec_from_file_location("standup_report", ROOT / "journal/standup_report.py")
+    standup = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(standup)
+    st = standup._compute_stats(standup._query_stats(db, None))
     assert st["closed"] == 4 and st["expectancy_r"] == exp
     assert "mean_reversion_v2" in st["by_bot"]
-    assert "Mean reversion" in pico._format_telegram(st, {"stale": False, "reason": "fresh"}, "test")
+    assert "Mean reversion" in standup._format_telegram(st, {"stale": False, "reason": "fresh"}, "test")
 
 
 def test_reset_script_is_valid_bash():
