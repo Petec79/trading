@@ -62,11 +62,34 @@ def load_bars(symbol: str, start: int, end: int, csv_dir: str | None) -> list[Ba
     return bars
 
 
+def load_monthly(symbol: str, start: int, end: int, csv_dir: str | None) -> list[Bar]:
+    """Monthly candles from Binance (cached). Offline CSV mode: None → resampled from the 1m data."""
+    if csv_dir:
+        return []
+    cache = DATA / f"{symbol}_1M_{start}_{end}.json"
+    if cache.exists():
+        return [Bar(*x) for x in json.loads(cache.read_text())]
+    from . import binance
+    try:
+        bars = binance.klines(symbol, "1M", 6, start_ms=start - 75 * 86_400_000, end_ms=end)
+    except Exception as e:
+        print(f"  {symbol}: monthly candles unavailable ({e}) — monthly levels limited", flush=True)
+        return []
+    DATA.mkdir(parents=True, exist_ok=True)
+    cache.write_text(json.dumps([[b.t, b.o, b.h, b.l, b.c, b.v, b.qv] for b in bars]))
+    return bars
+
+
 def run_symbol(symbol: str, bars: list[Bar], start: int, cfg: Config, sides: set,
-               engine_cls=SymbolEngine, btc: BTCSeries | None = None) -> list:
-    htf = {tf: resample(bars, tf) for tf in ("1h", "4h", "1d", "1w")}
+               engine_cls=SymbolEngine, btc: BTCSeries | None = None,
+               monthly: list[Bar] | None = None) -> list:
+    htf = {tf: resample(bars, tf) for tf in ("1h", "4h", "1d", "1w", "1M")}
     # drop the very first (partial) candle of each timeframe — warm-up starts mid-period
     htf = {tf: c[1:] for tf, c in htf.items()}
+    if monthly:
+        # real monthly candles (the 8-day warm-up can't show last month's high/low);
+        # only fully-closed months are ever used, LevelContext checks close times
+        htf["1M"] = sorted(monthly, key=lambda b: b.t)
     ctx = LevelContext(htf, cfg)
     ctx.btc = btc
     eng = engine_cls(symbol, cfg)
@@ -170,7 +193,8 @@ def main():
         if not bars:
             print(f"{sym}: no data")
             continue
-        tr, ca = run_symbol(sym, bars, start, cfg, sides, engine_cls, btc)
+        tr, ca = run_symbol(sym, bars, start, cfg, sides, engine_cls, btc,
+                            load_monthly(sym, start, end, a.csv_dir))
         print(f"{sym}: {len(bars)} bars → {len(tr)} trades, total {sum(t.net_r for t in tr):+.2f}R", flush=True)
         all_trades += tr
         all_cancel += ca

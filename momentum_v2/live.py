@@ -153,7 +153,7 @@ class Runner:
     # ── levels ─────────────────────────────────────────────────────────────
     def context(self, sym: str, now_ms: int) -> LevelContext:
         cache = self.htf_cache.setdefault(sym, {})
-        need = {"1h": 200, "4h": 12, "1d": 10, "1w": 5}
+        need = {"1h": 200, "4h": 12, "1d": 10, "1w": 5, "1M": 3}
         for tf, lim in need.items():
             period = period_start(now_ms, tf)          # Monday-aligned for 1w
             if cache.get(tf + "_p") != period:

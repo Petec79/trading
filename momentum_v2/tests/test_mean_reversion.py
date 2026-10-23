@@ -401,6 +401,48 @@ def test_failed_breakout_needs_edges_that_held():
     assert not any(x["type"] == "signal" and x["trade"].setup == "failed_breakout" for x in ev)
 
 
+def small_spike_setup(pierce=True):
+    c = cfg()
+    bars = range_bars(262, lo=100.0, hi=100.4)
+    while bars[-1].c > 100.1:
+        bars.pop()
+    # ~1.2-1.3% spike. pierce: level 101.0, spike tops 101.25 (failed break).
+    # no pierce: level 101.4, spike tops 101.33 — reaches the level (within 0.1%) but never trades above it.
+    top, level = (101.25, 101.0) if pierce else (101.33, 101.4)
+    for px in (100.5, 100.9, top):
+        add(bars, bars[-1].c, px, bars[-1].c * 0.9998, px * 0.9998, 7000)
+    ctx = ctx_for(bars, hi=level)
+    ctx.btc = BTCSeries([Bar(b.t, 60000, 60010, 59990, 60000, 1) for b in bars])
+    return c, bars, ctx
+
+
+def test_small_spike_enters_on_retest_of_the_failed_level():
+    c, bars, ctx = small_spike_setup()
+    e = MeanReversionEngine("TESTUSDT", c)
+    e.on_bar(bars, ctx)                                   # still above the level
+    add(bars, bars[-1].c, bars[-1].c, 100.8, 100.85, 2500)  # first close back under 101.0
+    ev = e.on_bar(bars, ctx)
+    t = e.trade
+    assert t and t.setup == "fast_spike" and t.details["entry_style"] == "retest", ev
+    assert t.entry_type == "limit" and t.level == pytest.approx(101.0)
+    assert t.stop > 101.25 or t.stop_kind == "1R"
+    assert t.target == pytest.approx(t.details["spike"]["origin"])
+
+
+def test_small_spike_that_never_pierced_the_level_is_not_a_retest_trade():
+    c, bars, ctx = small_spike_setup(pierce=False)
+    from momentum_v2.mean_reversion import find_spike
+    sp = find_spike(bars, len(bars) - 1, 1, c)
+    assert sp and sp["size_pct"] <= 1.5                                # it IS a small spike…
+    probe = MeanReversionEngine("X", c)
+    assert probe._key_level_hit(ctx, 1, sp["origin"], bars[-1].h, bars[-1].t) == 101.4   # …into a key level
+    e = MeanReversionEngine("TESTUSDT", c)
+    e.on_bar(bars, ctx)
+    add(bars, bars[-1].c, bars[-1].c, 100.6, 100.65, 2500)
+    ev = e.on_bar(bars, ctx)
+    assert not any(x["type"] == "signal" and x["trade"].setup == "fast_spike" for x in ev)
+
+
 if __name__ == "__main__":
     import traceback
     fails = 0

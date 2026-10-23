@@ -374,20 +374,37 @@ class MeanReversionEngine(SymbolEngine):
             return None
         ext = bars[e].h if ds == 1 else bars[e].l
         t_e = bars[e].t
-        # a swing formed after the extreme (swing low for an up-spike)
-        s = cfg.swing_strength
-        piv = None
-        for k in range(i - 1 - s, e, -1):
-            if (is_pivot_low(bars, k, s) if ds == 1 else is_pivot_high(bars, k, s)):
-                piv = bars[k].l if ds == 1 else bars[k].h
-                break
-        if piv is None:
-            return None
-        # price must have closed back inside the level, and THIS candle breaks structure
-        back_inside = any((b.c < L) if ds == 1 else (b.c > L) for b in bars[e:i + 1])
-        bos = (cur.c < piv <= prev.c) if ds == 1 else (cur.c > piv >= prev.c)
-        if not (back_inside and bos):
-            return None
+        origin = sp["origin"]
+        size = abs(ext - origin) / origin               # P1 p118: origin → extreme
+        inside = (lambda b: b.c < L) if ds == 1 else (lambda b: b.c > L)
+        small = size <= cfg.spike_market_pct
+
+        if small:
+            # P2 #4/#22/#23 and p16 tip: with a small spike, waiting for a break of
+            # structure leaves < 1% to catch — enter on the RETEST of the level that
+            # failed, like a failed breakout. Needs a real failed break (pierced the
+            # level), triggered by the first close back inside.
+            pierced = (ext > L) if ds == 1 else (ext < L)
+            first_inside = next((j for j in range(e, i + 1) if inside(bars[j])), None)
+            trigger = first_inside == i or (first_inside == e and i == e + 1)
+            if not (pierced and trigger):
+                return None
+            entry_level, entry_type, bos_min = L, "limit", None
+        else:
+            # P1 p115-119: swing forms after the extreme, then a candle closes through it
+            s = cfg.swing_strength
+            piv = None
+            for k in range(i - 1 - s, e, -1):
+                if (is_pivot_low(bars, k, s) if ds == 1 else is_pivot_high(bars, k, s)):
+                    piv = bars[k].l if ds == 1 else bars[k].h
+                    break
+            if piv is None:
+                return None
+            back_inside = any(inside(b) for b in bars[e:i + 1])
+            bos = (cur.c < piv <= prev.c) if ds == 1 else (cur.c > piv >= prev.c)
+            if not (back_inside and bos):
+                return None
+            entry_level, entry_type, bos_min = piv, "market", i - e
         key = f"spike:{side}:{t_e}"
         if key in self.attempted:
             return None
@@ -396,23 +413,21 @@ class MeanReversionEngine(SymbolEngine):
         btc = self._btc_move(ctx, bars[sp["origin_i"]].t, t_e + cfg.bar_ms)
         if btc is not None and btc * ds >= cfg.btc_corr_pct:
             return None
-        bos_min = i - e
         score, crit, det, ok = self._score(bars, d, True, e)
         if not ok:
             return None
-        origin = sp["origin"]
-        size = abs(ext - origin) / origin               # P1 p118: origin → extreme
-        entry_type = "market" if size > cfg.spike_market_pct else "limit"
-        ref = cur.c if entry_type == "market" else piv
+        ref = cur.c if entry_type == "market" else entry_level
         stop, sk = ext * (1 + ds * 0.0005), "level"        # just beyond the spike extreme
         if abs(stop - ref) > abs(origin - ref):             # R:R < 1 → 1R stop (P2 p37)
             stop, sk = ref - d * abs(origin - ref), "1R"
-        quality = "good" if bos_min <= 15 else "average" if bos_min <= 30 else "slow"
-        return self._new_trade(side, "fast_spike", piv, ref, entry_type, stop, sk, origin,
+        quality = (None if bos_min is None else
+                   "good" if bos_min <= 15 else "average" if bos_min <= 30 else "slow")
+        return self._new_trade(side, "fast_spike", entry_level, ref, entry_type, stop, sk, origin,
                                "spike_origin", score, crit,
                                {**det, "spike": sp, "spike_start_t": bars[sp["origin_i"]].t,
-                                "key_level": L, "bos_minutes": bos_min,
-                                "bos_quality": quality, "btc_move_pct": None if btc is None else round(btc * 100, 2)},
+                                "key_level": L, "entry_style": "retest" if small else "break_of_structure",
+                                "bos_minutes": bos_min, "bos_quality": quality,
+                                "btc_move_pct": None if btc is None else round(btc * 100, 2)},
                                now)
 
     def _key_level_hit(self, ctx, ds, origin, ext, t) -> Optional[float]:

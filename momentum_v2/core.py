@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import bisect
 import statistics
+from datetime import datetime, timezone
 from dataclasses import dataclass, field, asdict
 from typing import Optional
 
@@ -40,10 +41,22 @@ class Bar:
 
 
 def period_start(t: int, tf: str) -> int:
+    if tf == "1M":                                   # calendar month, UTC (Binance-aligned)
+        d = datetime.fromtimestamp(t / 1000, tz=timezone.utc)
+        return int(datetime(d.year, d.month, 1, tzinfo=timezone.utc).timestamp() * 1000)
     ms = TF_MS[tf]
     if tf == "1w":
         return ((t - WEEK_OFFSET_MS) // ms) * ms + WEEK_OFFSET_MS
     return (t // ms) * ms
+
+
+def period_end(t: int, tf: str) -> int:
+    """Close time of the candle that opened at (or contains) t."""
+    if tf == "1M":
+        d = datetime.fromtimestamp(period_start(t, tf) / 1000, tz=timezone.utc)
+        y, m = (d.year + 1, 1) if d.month == 12 else (d.year, d.month + 1)
+        return int(datetime(y, m, 1, tzinfo=timezone.utc).timestamp() * 1000)
+    return period_start(t, tf) + TF_MS[tf]
 
 
 def resample(bars: list[Bar], tf: str) -> list[Bar]:
@@ -102,7 +115,7 @@ class LevelContext:
     def __init__(self, htf: dict[str, list[Bar]], cfg: Config):
         self.cfg = cfg
         self.htf = {tf: sorted(c, key=lambda b: b.t) for tf, c in htf.items()}
-        self._opens = {tf: [b.t for b in c] for tf, c in self.htf.items()}
+        self._closes = {tf: [period_end(b.t, tf) for b in c] for tf, c in self.htf.items()}
         # Swing highs/lows on the target timeframe, with confirmation time.
         tf = cfg.target_swing_tf
         s = cfg.target_swing_strength
@@ -115,11 +128,10 @@ class LevelContext:
 
     def prev(self, tf: str, now_ms: int) -> Optional[Bar]:
         """The most recent candle of `tf` that closed at or before now_ms."""
-        opens = self._opens.get(tf)
-        if not opens:
+        closes = self._closes.get(tf)
+        if not closes:
             return None
-        ms = TF_MS[tf]
-        i = bisect.bisect_right(opens, now_ms - ms) - 1
+        i = bisect.bisect_right(closes, now_ms) - 1
         return self.htf[tf][i] if i >= 0 else None
 
     def _all_levels(self, now_ms: int, side: str) -> list[float]:

@@ -5,7 +5,6 @@ import time
 import requests
 
 from .core import Bar
-from .config import TF_MS
 
 BASE = "https://fapi.binance.com"
 _session = requests.Session()
@@ -39,9 +38,9 @@ def klines(symbol: str, interval: str, limit: int = 500,
 
 def closed_klines(symbol: str, interval: str, limit: int, now_ms: int) -> list[Bar]:
     """Klines with the still-forming candle removed."""
+    from .core import period_end
     bars = klines(symbol, interval, limit)
-    ms = TF_MS[interval]
-    return [b for b in bars if b.t + ms <= now_ms]
+    return [b for b in bars if period_end(b.t, interval) <= now_ms]
 
 
 def history_1m(symbol: str, start_ms: int, end_ms: int) -> list[Bar]:

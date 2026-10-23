@@ -412,6 +412,23 @@ def test_hot_coins_ranked_by_last_5_minute_trades():
             binance.trades_last_minutes = orig
 
 
+def test_monthly_candles_are_calendar_months_and_only_used_once_closed():
+    from momentum_v2.core import period_end
+    from datetime import datetime, timezone
+    ms = lambda *a: int(datetime(*a, tzinfo=timezone.utc).timestamp() * 1000)  # noqa: E731
+    assert period_start(ms(2026, 12, 15, 9), "1M") == ms(2026, 12, 1)
+    assert period_end(ms(2026, 12, 15), "1M") == ms(2027, 1, 1)
+    nov, dec = Bar(ms(2026, 11, 1), 1, 5, 1, 2, 1), Bar(ms(2026, 12, 1), 2, 9, 2, 3, 1)
+    ctx = LevelContext({"1M": [nov, dec], "1h": []}, Config())
+    assert ctx.prev("1M", ms(2026, 12, 20)).h == 5          # December still open → November's high
+    assert ctx.prev("1M", ms(2027, 1, 1)).h == 9
+    assert "1M" in Config().level_timeframes and Config().level_timeframes[0] == "1M"
+
+
+def test_momentum_limit_expiry_is_60_minutes():
+    assert Config().limit_expiry_bars == 60
+
+
 if __name__ == "__main__":
     import traceback
     fails = 0

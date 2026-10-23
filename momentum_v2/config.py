@@ -20,7 +20,9 @@ class Config:
     # High/low of the previous 1h, 4h, day and week. 1h is the smallest level
     # the author will trade. Checked biggest-first: if one candle breaks
     # several levels at once we label it with the biggest.
-    level_timeframes: tuple = ("1w", "1d", "4h", "1h")
+    # Momentum p48 "daily levels, weekly levels or even monthly levels"; MR part 2
+    # examples trade monthly highs (#21 COMP, bad #11 AGLD).
+    level_timeframes: tuple = ("1M", "1w", "1d", "4h", "1h")
 
     # Resistance/support used for TARGETS ("the next level", p56): the other
     # HTF levels plus 1h swing highs/lows from the last N days.
@@ -42,7 +44,9 @@ class Config:
     # Distance level→stop < 3% → limit order ON the broken level.
     # Distance ≥ 3%            → market order right after the candle close.
     limit_vs_market_pct: float = 0.03
-    limit_expiry_bars: int = 30             # ASSUMPTION: cancel unfilled limit after 30 min
+    # Not stated in the momentum guide; the author's general rule (MR part 2 p22) is to
+    # cancel after 60 min, his average trade duration.
+    limit_expiry_bars: int = 60
     # Cancel an unfilled limit once price has covered this share of the way
     # from the level to the target (momentum: the whole way).
     missed_fraction: float = 1.0
@@ -134,6 +138,7 @@ TF_MS = {
     "4h": 14_400_000,
     "1d": 86_400_000,
     "1w": 604_800_000,
+    "1M": 2_678_400_000,        # 31 days — only for request sizing; candles use calendar months
 }
 
 # Binance weekly candles open Monday 00:00 UTC; epoch (1 Jan 1970) was a Thursday.

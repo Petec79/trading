@@ -20,10 +20,10 @@ one live runner and one backtester. You choose which one runs with `--strategy`.
 | 1-minute chart | p46, ch.7 | Wakes 3s after every minute, uses **closed** 1m candles only |
 | Coins: alt perps, top gainers → longs, worst losers → shorts, hot by trade count | p31-33, p58 | Binance USDT-M crypto perps (no stock/commodity perps, no majors), refreshed every 15 min. "Hot" = top 10 by trades in the last 5 minutes (Orion's TRD 5M), counted from Binance 1m candles |
 | ≥ $100k / 1 min volume | p58 | Checked at signal time on the last hour's average |
-| Levels: previous 1h / 4h / day / week high (longs) or low (shorts) | p45, p48 | Previous **completed** candle of each timeframe; biggest level wins |
+| Levels: previous 1h / 4h / day / week / month high (longs) or low (shorts) | p45, p48 | Previous **completed** candle of each timeframe (months are calendar months); biggest level wins |
 | Entry trigger: 1 candle **close** through the level | p49-51 | A candle that closes through it after one that didn't. One attempt per level |
 | Stop at the relevant swing low / high (3-candle swing) | p42, p54, p77 | Most recent confirmed 3-candle swing at least 1% beyond the level (p77: the author skips swings closer than 1%) |
-| Stop < 3% → limit order on the broken level, ≥ 3% → market order | p52-53 | Limit fills only if price comes back to the level (30-min expiry; cancelled if it runs to target first). Market fills at the next open + slippage |
+| Stop < 3% → limit order on the broken level, ≥ 3% → market order | p52-53 | Limit fills only if price comes back to the level (60-min expiry, the author's rule from MR part 2 p22; cancelled if it runs to target first). Market fills at the next open + slippage |
 | Quality: (1) slow grind, not a fast spike (2) volume increasing (3) ≥ 2h staircase | p36, p38, p60 | Scored 0-3. Needs ≥ 2/3 **and** the staircase (p95 tip) |
 | 3/3 → next level; anything less → 1R | p56, ch.7 | 3/3 targets the next resistance/support (other HTF levels + 1h swings, 7 days). Nothing left beyond (ATH-style) → no TP, trail stop to each new swing (p57 #3) |
 | Evolving R rule: at +0.9R move stop to +0.1R | p79 | Yes |
@@ -47,7 +47,7 @@ Put `momentum_v2/` next to `journal/` and `scanner/` in `/home/openclaw/workspac
 
 ```bash
 cd /home/openclaw/workspace
-python3 momentum_v2/tests/test_engine.py          # 26 tests, synthetic data
+python3 momentum_v2/tests/test_engine.py          # 29 tests, synthetic data
 python3 -m momentum_v2.live --once --no-journal   # one dry cycle against live Binance data
 ```
 
@@ -122,7 +122,7 @@ Journal scanner name: `mean_reversion_v2`.
 | | Trigger | Entry | Target | Stop |
 |---|---|---|---|---|
 | **Failed breakout** p94-110 | Candle closes outside the 2h range, then one closes back inside (or a one-candle wick, part 2 p20). Both range edges must have **held price 3 times**. Needs a range **and** volume not increasing. Mildly rising volume is allowed when the range has lasted 4h+ (part 2 #2, #15, #20) | Range ≥ 3% → market, else limit on the failed level | Other side of the range | Next S/R level if it's roughly 1R away, else 1R |
-| **Fast spike reversal** p111-129 | Spike into a key level (previous 1h/4h/day/week high or low), close back inside, swing forms, candle closes through it. Skipped if BTC moved ≥ 0.5% the same way, the spike hit no key level, or structure took > 90 min to break | Spike > 1.5% → market, else limit on the broken swing | Origin of the spike | Spike extreme (1R if that gives R:R < 1, part 2 p37) |
+| **Fast spike reversal** p111-129 | Spike into a key level (previous 1h/4h/day/week/month high or low). **Spike > 1.5%:** close back inside, swing forms, candle closes through it (break of structure). **Spike ≤ 1.5%:** the spike must have pierced the level; triggers on the first close back inside (part 2 #4, #22, #23). Skipped if BTC moved ≥ 0.5% the same way, the spike hit no key level, or structure took > 90 min to break | Spike > 1.5% → market. ≤ 1.5% → limit on the retest of the failed level | Origin of the spike | Spike extreme (1R if that gives R:R < 1, part 2 p37) |
 | **Partial fill** p130-139 | Candle hits the **exact** price of a prior swing high/low on ≥ 2× average volume; next candle closes the other way | Market | Recent swing (≥ 1%) | 1R (skipped if 1R would sit inside the tick candle) |
 
 On random-walk test data, which has no edge to find, the bot takes about 1 failed
@@ -165,7 +165,7 @@ The bot also records a **hype score** that never blocks a trade. It takes the la
 
 ### Run / backtest
 ```bash
-python3 momentum_v2/tests/test_mean_reversion.py                 # 26 tests
+python3 momentum_v2/tests/test_mean_reversion.py                 # 28 tests
 python3 momentum_v2/tests/test_news.py                           # 10 tests (all sources faked)
 python3 -m momentum_v2.live --strategy mean_reversion --once --no-journal
 cp momentum_v2/deploy/mean-reversion-v2.service ~/.config/systemd/user/
