@@ -175,3 +175,60 @@ python3 -m momentum_v2.backtest --strategy mean_reversion \
 ```
 The backtest loads BTCUSDT as well, for the correlation check. Funding and
 return-bucket bias are live-only, so the backtest leaves them out.
+
+---
+
+## Manual-trading alerts (`alerts.py`)
+
+Both bots send alerts by default. To turn them off, use `--no-alerts`. Telegram is the main channel and Discord gets a copy.
+
+| Message | When | What's in it |
+|---|---|---|
+| 👀 **GET READY** | One candle before a trigger: price within 0.4% of a level with the momentum regime already met, a fast spike into a key level, a close outside a held range, or an exact top/bottom tick | What would trigger the trade, the likely order type, stop and target |
+| 🟢/🔴 **Signal** | The moment the trigger candle closes, ~1-2 s later | Candle close and send time, **MARKET NOW** or **LIMIT at X**, SL and TP as prices and %, **R:R**, **size for $10k at 1% risk**, a validity line (market: skip once 30% of the move to target is gone; limit: cancel time and cancel price), criteria |
+| ✅🚫🔒🏁 **Follow-ups** | Fill, cancel, stop move, exit (target, stop, 2h time stop, trail) | Sent as replies under the signal, so you manage the trade the same way the bot does |
+| 📰 **News** | Fast spikes only | Shadow mode: the signal goes first and the verdict follows as a reply. Enforce mode: "checking news…", then go or no-go |
+| ⚠️ **LATE** | Any event older than 90 s (the bot catching up after downtime) | Marked "do NOT act". Late get-ready alerts aren't sent at all |
+| 🛑 **Bot silent** | From `watchdog.py` | So silence never means "no trades" when the bot is actually down |
+
+Speed: the bots fetch every watched coin **in parallel 0.6 s after each minute**, and retry briefly if Binance hasn't published the candle yet. Expect signals within about 1-2 s of the candle close.
+
+Prices come from Binance perps. Use the **% distances** if your venue's prices differ slightly.
+
+Settings, all in `~/.hermes/.env`:
+```
+TELEGRAM_BOT_TOKEN=...             # already there (Midas's bot)
+TRADING_TELEGRAM_CHAT_ID=...       # optional; defaults to the first id in TELEGRAM_ALLOWED_USERS
+ALERT_ACCOUNT=10000                # sizing line
+ALERT_RISK_PCT=1
+ALERT_WATCH=on                     # off = actionable signals only, no GET READY
+ALERT_LATE_SECONDS=90
+```
+Sending from Midas's bot doesn't interfere with Hermes, because sending messages and reading updates are separate. If you'd rather keep trading alerts apart, create a second bot with @BotFather and set `TELEGRAM_BOT_TOKEN` in the services' environment instead.
+
+## Screener v2 (`screener.py`)
+
+This replaces `scanner/market_scanner.py`, `scan_and_report.py` and the daily `cron_spicy_report.py` report. It uses the same measurements as the bots, so the two can't disagree:
+- **Market bias** from 24h returns, the right way round (mostly green → mainly longs).
+- **Momentum long and short candidates:** 2h staircase plus grind or rising volume, and the next level.
+- **Reversal-friendly coins:** range plus volume not rising, with how many hours it has ranged and the levels above and below.
+- **Avoid reversals:** staircases.
+- **Context:** spikes in the last 10 minutes, funding due within 90 minutes (and who pays), and the bots' open trades.
+- **Real 5-minute stats:** trades, volume and % change.
+
+```bash
+python3 -m momentum_v2.screener            # print it
+python3 -m momentum_v2.screener --send     # and send to Telegram + Discord
+```
+
+## Deploying the alerts, screener and watchdog
+
+```bash
+crontab -e
+# add:
+*/15 * * * * cd /home/openclaw/workspace && /usr/bin/python3 -m momentum_v2.screener --send >> momentum_v2/data/screener.log 2>&1
+*/2  * * * * cd /home/openclaw/workspace && /usr/bin/python3 -m momentum_v2.watchdog >> momentum_v2/data/watchdog.log 2>&1
+# and REMOVE the old lines for scanner/realtime_scanner.py, scanner/cron_spicy_report.py,
+# scanner/scan_and_report.py and scanner/_morning_send.py, which send the old, wrong reports
+```
+The two bot services (`momentum-v2`, `mean-reversion-v2`) send alerts once they're restarted on this code.

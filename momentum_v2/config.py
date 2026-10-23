@@ -123,6 +123,9 @@ class Config:
     taker_fee: float = 0.0005
     slippage: float = 0.0005                # applied to market entries and stop/time exits
 
+    # ── Get-ready alerts (manual trading) ────────────────────────────────────
+    watch_dist_pct: float = 0.004           # alert when price is within 0.4% of a level
+
     # ── Live runner ──────────────────────────────────────────────────────────
     max_open_positions: int = 5
     history_bars: int = 300                 # 1m bars kept per symbol (needs ≥ 2h + stop search)

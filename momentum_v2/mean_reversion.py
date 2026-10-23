@@ -261,15 +261,7 @@ class MeanReversionEngine(SymbolEngine):
             return max(b.h for b in w), min(b.l for b in w)
 
         def held(s, r_hi, r_lo):
-            """P1 p108: 'the same S/R levels are successfully holding price' —
-            both edges must have been tested (swing within 15% of the range
-            height) at least fb_min_edge_tests times inside the window."""
-            w = bars[s - cfg.fb_range_bars:s]
-            band = cfg.fb_edge_band * (r_hi - r_lo)
-            hs, ls = pivots(w, 2)
-            top = sum(1 for _, p in hs if p >= r_hi - band)
-            bot = sum(1 for _, p in ls if p <= r_lo + band)
-            return top >= cfg.fb_min_edge_tests and bot >= cfg.fb_min_edge_tests
+            return self._edges_held(bars, s, r_hi, r_lo)
 
         def outside(b, edge):
             return b.c < edge if d == 1 else b.c > edge
@@ -295,6 +287,127 @@ class MeanReversionEngine(SymbolEngine):
                 rng = range(s, i + 1)
                 ext_i = min(rng, key=lambda k: bars[k].l) if d == 1 else max(rng, key=lambda k: bars[k].h)
                 return edge, r_hi, r_lo, ext_i
+        return None
+
+    def _edges_held(self, bars, s, r_hi, r_lo) -> bool:
+        """P1 p108: 'the same S/R levels are successfully holding price' — both
+        edges of the range in bars[s-120:s] were tested (a swing within
+        fb_edge_band of the range height) at least fb_min_edge_tests times."""
+        cfg: MRConfig = self.cfg
+        w = bars[s - cfg.fb_range_bars:s]
+        band = cfg.fb_edge_band * (r_hi - r_lo)
+        hs, ls = pivots(w, 2)
+        top = sum(1 for _, p in hs if p >= r_hi - band)
+        bot = sum(1 for _, p in ls if p <= r_lo + band)
+        return top >= cfg.fb_min_edge_tests and bot >= cfg.fb_min_edge_tests
+
+    # -- get-ready alerts (manual trading) --------------------------------------------
+    def watch(self, bars, ctx, allowed=frozenset({"long", "short"})) -> list[dict]:
+        """One step before each MR trigger, using the same conditions:
+        fast spike just printed into a key level → wait for the trigger;
+        candle just closed outside a held range → wait for the close back inside;
+        exact top/bottom tick on volume → act if the next candle closes the other way."""
+        cfg: MRConfig = self.cfg
+        if self.trade is not None or len(bars) < 252:
+            return []
+        if sum(b.qv for b in bars[-60:]) / 60 < cfg.min_quote_vol_per_min:
+            return []
+        i = len(bars) - 1
+        cur = bars[i]
+        now = cur.t + cfg.bar_ms
+        out = []
+        for side in ("long", "short"):
+            if side not in allowed:
+                continue
+            d = 1 if side == "long" else -1
+            ds = -d
+            word_in = "below" if d == -1 else "above"
+            # (a) fast spike printed on this candle
+            sp = find_spike(bars, i, ds, cfg)
+            if sp:
+                ext = cur.h if ds == 1 else cur.l
+                L = self._key_level_hit(ctx, ds, sp["origin"], ext, cur.t)
+                btc = self._btc_move(ctx, bars[sp["origin_i"]].t, now)
+                if L is not None and not (btc is not None and btc * ds >= cfg.btc_corr_pct):
+                    score, crit, det, ok = self._score(bars, d, True, i)
+                    size = abs(ext - sp["origin"]) / sp["origin"]
+                    small = size <= cfg.spike_market_pct
+                    pierced = (ext > L) if ds == 1 else (ext < L)
+                    if small and not pierced:
+                        ok = False               # the engine only takes small spikes that broke the level
+                    if ok and abs(ext - sp["origin"]) / sp["origin"] >= cfg.min_target_pct \
+                            and self._mark_watch(f"wspike:{side}:{cur.t}", now):
+                        how = (f"{side.upper()} at MARKET on a 1m close {word_in} the next swing (break of structure)"
+                               if not small else
+                               f"LIMIT {'SELL' if d == -1 else 'BUY'} at {L:g} once a candle closes back {word_in} it")
+                        ref = L if small else cur.c
+                        beyond = ext * (1 + ds * 0.0005)
+                        stop_txt = (f"stop just beyond {ext:g}" if abs(beyond - ref) <= abs(sp["origin"] - ref)
+                                    else f"stop 1R (≈{ref - d * abs(sp['origin'] - ref):g}) — the extreme is too far")
+                        out.append({"symbol": self.symbol, "side": side, "setup": "fast spike reversal",
+                                    "bar_close": now,
+                                    "text": (f"{sp['size_pct']:.1f}% spike into {L:g} on {sp['vol_x']:.0f}x volume. "
+                                             f"{how}.\nTarget ~{sp['origin']:g} (origin) | {stop_txt} | "
+                                             f"score {score}/3 — news is checked when it triggers")})
+            # (b) first candle closing outside a held range
+            if i - cfg.fb_range_bars > 0:
+                w = bars[i - cfg.fb_range_bars:i]
+                r_hi, r_lo = max(b.h for b in w), min(b.l for b in w)
+                edge = r_lo if d == 1 else r_hi
+                outside = (lambda b: b.c < edge) if d == 1 else (lambda b: b.c > edge)
+                if outside(cur) and not outside(bars[i - 1]) and self._edges_held(bars, i, r_hi, r_lo):
+                    target = r_hi if d == 1 else r_lo
+                    if abs(target - edge) / edge >= cfg.min_target_pct:
+                        score, crit, det, ok = self._score(bars, d, False, i)
+                        mild = det.get("vol_vs_regime_start", 9) <= cfg.vol_unclear_max_ratio
+                        long_range = det["range_hours"] >= cfg.dor_exception_hours and mild
+                        vol_ok = crit["volume_not_increasing"] or long_range
+                        if ok and crit["ranging"] and vol_ok and det["range_hours"] >= cfg.fb_min_range_hours \
+                                and self._mark_watch(f"wfb:{side}:{edge}", now):
+                            rng = (r_hi - r_lo) / r_lo
+                            how = ("MARKET" if rng >= cfg.fb_market_range_pct else f"LIMIT at {edge:g}")
+                            out.append({"symbol": self.symbol, "side": side, "setup": "failed breakout",
+                                        "bar_close": now,
+                                        "text": (f"Closed {'below the range low' if d == 1 else 'above the range high'} "
+                                                 f"{edge:g} (range {r_lo:g}–{r_hi:g}, {rng * 100:.1f}%, held {cfg.fb_min_edge_tests}+ times). "
+                                                 f"{side.upper()} if a candle closes back {'above' if d == 1 else 'below'} "
+                                                 f"{edge:g} within {cfg.fb_max_outside_bars} min → {how}.\n"
+                                                 f"Target {target:g} | score {score}/3")})
+            # (c) exact top / bottom tick on this candle
+            P = cur.l if d == 1 else cur.h
+            s = cfg.tt_swing_strength
+            avg_v = sum(b.v for b in bars[-60:]) / 60     # the engine's window one candle later
+            if cur.v >= cfg.tt_vol_mult * avg_v:
+                for k in range(i - 1 - s, max(s, i - cfg.tt_lookback_bars), -1):
+                    hit = (is_pivot_low(bars, k, s) and bars[k].l == P) if d == 1 else                           (is_pivot_high(bars, k, s) and bars[k].h == P)
+                    if hit:
+                        clean = not any((b.l < P) if d == 1 else (b.h > P) for b in bars[k + 1:i])
+                        score, crit, det, ok = self._score(bars, d, find_spike(bars, i, -d, cfg) is not None, i)
+                        tgt = self._tt_target(bars, i + 1, d, cur.c)
+                        stop_ok = tgt is not None and ((cur.c - d * abs(tgt - cur.c)) - P) * d < 0
+                        if clean and ok and stop_ok and self._mark_watch(f"wtt:{side}:{P}:{cur.t}", now):
+                            out.append({"symbol": self.symbol, "side": side, "setup": "partial fill (top/bottom tick)",
+                                        "bar_close": now,
+                                        "text": (f"{'Bottom' if d == 1 else 'Top'}-ticked EXACTLY {P:g} (earlier swing) on "
+                                                 f"{cur.v / avg_v:.1f}x volume. {side.upper()} at MARKET if the NEXT candle "
+                                                 f"closes {'green' if d == 1 else 'red'} without trading past {P:g}.")})
+                        break
+        return out
+
+    def _tt_target(self, bars, i, d, ref) -> Optional[float]:
+        """Partial-fill target: the most recent swing on the other side, ≥ 1% away.
+        `i` is the index of the confirmation candle (it may not exist yet: i == len)."""
+        cfg: MRConfig = self.cfg
+        s = cfg.swing_strength
+        for k2 in range(min(i - 1 - s, len(bars) - 1 - s), max(0, i - cfg.range_bars), -1):
+            if d == -1 and is_pivot_low(bars, k2, s):
+                p = bars[k2].l
+                if (ref - p) / ref >= cfg.min_target_pct:
+                    return p
+            if d == 1 and is_pivot_high(bars, k2, s):
+                p = bars[k2].h
+                if (p - ref) / ref >= cfg.min_target_pct:
+                    return p
         return None
 
     def _failed_breakout(self, bars, ctx, side) -> Optional[Trade]:
@@ -494,19 +607,7 @@ class MeanReversionEngine(SymbolEngine):
         if not ok:
             return None
         ref = cur.c
-        # target: the most recent swing on the other side, at least 1% away
-        target = None
-        for k2 in range(i - 1 - cfg.swing_strength, max(0, i - cfg.range_bars), -1):
-            if d == -1 and is_pivot_low(bars, k2, cfg.swing_strength):
-                p = bars[k2].l
-                if (ref - p) / ref >= cfg.min_target_pct:
-                    target = p
-                    break
-            if d == 1 and is_pivot_high(bars, k2, cfg.swing_strength):
-                p = bars[k2].h
-                if (p - ref) / ref >= cfg.min_target_pct:
-                    target = p
-                    break
+        target = self._tt_target(bars, i, d, ref)
         if target is None:
             return None
         stop, sk = ref - d * abs(target - ref), "1R"       # P1 p136: 1R equidistant

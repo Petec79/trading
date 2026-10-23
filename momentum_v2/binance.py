@@ -94,5 +94,11 @@ def premium_index(symbol: str) -> tuple[float, int | None]:
     return float(d.get("lastFundingRate", 0) or 0), d.get("nextFundingTime")
 
 
+def premium_all() -> dict[str, tuple[float, int | None]]:
+    """Funding for every symbol in one call: {symbol: (rate fraction, next funding ms)}."""
+    return {d["symbol"]: (float(d.get("lastFundingRate", 0) or 0), d.get("nextFundingTime"))
+            for d in _get("/fapi/v1/premiumIndex")}
+
+
 def tickers_24h() -> list[dict]:
     return _get("/fapi/v1/ticker/24hr")
