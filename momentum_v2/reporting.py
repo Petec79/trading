@@ -67,7 +67,7 @@ class JournalBridge:
             volume_regime=("increasing" if crit.get("volume_increasing")
                            else "flat_or_decreasing" if crit.get("volume_not_increasing")
                            or crit.get("volume_increasing") is False else "increasing"),
-            thesis=thesis(t), entry_type=t.entry_type, signal_ts=iso(t.signal_t))
+            thesis=thesis(t), entry_type=t.entry_type, signal_ts=iso(t.signal_t), setup=t.setup)
         self.j.update_entry(t.journal_id, t.entry, t.entry_type, iso(t.entry_t))
 
     def on_exit(self, t: Trade):
@@ -75,7 +75,8 @@ class JournalBridge:
             self.on_fill(t)
         self.j.capture_exit(t.journal_id, t.exit, t.exit_reason, r_override=t.net_r,
                             notes=f"gross {t.gross_r:+.2f}R, net {t.net_r:+.2f}R after fees; "
-                                  f"MFE {t.mfe_r:.2f}R; details {json.dumps(t.details, default=str)}")
+                                  f"MFE {t.mfe_r:.2f}R; details {json.dumps(t.details, default=str)}",
+                            exit_ts=iso(t.exit_t))
 
 
 def _flags(t: Trade) -> list[str]:

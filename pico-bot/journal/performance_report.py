@@ -44,7 +44,7 @@ Flags
 --json       Emit the report as JSON (state_source, trade_count, etc.) for
             downstream tooling. Output includes the same fields the standup
             needs plus REPORTING METADATA (see AC).
---scanner    Filter to mean_reversion|momentum (default: both).
+--scanner    Filter to one bot: momentum_v2 | mean_reversion_v2 (default: all).
 --stale-hours N  Threshold for the signal-stale flag (default 24). Signals
             whose newest `signal_ts` is older than this many hours trip the
             STALE flag.
@@ -133,31 +133,50 @@ def _query_stats(db: Path, scanner: str | None) -> dict[str, Any]:
     }
 
 
+def _shared_stats():
+    """journal/stats.py — the one set of numbers every report uses. None if unavailable."""
+    for root in (THIS_DIR.parent.parent / "journal", *_JOURNAL_ROOTS):   # repo layout first, then the VPS paths
+        if (root / "stats.py").exists():
+            sys.path.insert(0, str(root))
+            try:
+                import stats as S  # type: ignore
+                return S
+            except Exception:
+                continue
+    return None
+
+
 def _compute_stats(state: dict[str, Any]) -> dict[str, Any]:
     trades = state["trades"]
     pending = state["pending"]
-    wins = [t for t in trades if t["outcome"] == "win"]
-    losses = [t for t in trades if t["outcome"] == "loss"]
-    closed = wins + losses + [
-        t for t in trades
-        if t["outcome"] == "breakeven"
-    ]
-    total_closed_decisive = len(wins) + len(losses)
-    wr = (len(wins) / total_closed_decisive * 100.0) if total_closed_decisive else 0.0
-    r_vals = [t["r_multiple"] for t in trades if t["r_multiple"] is not None]
-    pnl_usd_vals = [t["pnl_usd"] for t in trades if t["pnl_usd"] is not None]
-    total_r = sum(r_vals)
-    total_pnl_usd = sum(pnl_usd_vals)
+    S = _shared_stats()
+    if S is not None:
+        sm = S.summarize(trades)
+        by_bot = {k: v for k, v in S.breakdown(trades, lambda t: t.get("scanner") or "unknown").items()}
+        closed, wins, losses = sm["closed"], sm["wins"], sm["losses"]
+        wr, total_r, total_pnl_usd, exp = sm["win_rate"], sm["total_r"], sm["total_pnl_usd"], sm["expectancy_r"]
+    else:  # fallback: same conventions, computed inline
+        cl = [t for t in trades if t["outcome"] in ("win", "loss", "breakeven") and t["r_multiple"] is not None]
+        wins = sum(1 for t in cl if t["outcome"] == "win")
+        losses = sum(1 for t in cl if t["outcome"] == "loss")
+        closed = len(cl)
+        total_r = sum(t["r_multiple"] for t in cl)
+        total_pnl_usd = sum(t["pnl_usd"] for t in cl if t["pnl_usd"] is not None)
+        wr = round(wins / closed * 100, 1) if closed else 0.0
+        exp = round(total_r / closed, 3) if closed else 0.0
+        by_bot = {}
     return {
-        "total_trades": len(trades),
-        "closed": len(closed),
-        "wins": len(wins),
-        "losses": len(losses),
+        "total_trades": closed + len(pending),
+        "closed": closed,
+        "wins": wins,
+        "losses": losses,
         "pending": len(pending),
         "open_positions": len(pending),
         "win_rate": round(wr, 2),
+        "expectancy_r": exp,
         "total_r": round(total_r, 2),
         "total_pnl_usd": round(total_pnl_usd, 2),
+        "by_bot": by_bot,
         "oldest_trade_ts": state["oldest_trade_ts"],
         "newest_trade_ts": state["newest_trade_ts"],
     }
@@ -190,8 +209,12 @@ def _format_telegram(stats: dict[str, Any], stale: dict[str, Any],
         "**PICO Trading**",
         f"Trades: {stats['total_trades']} ({stats['closed']} closed, "
         f"{stats['open_positions']} open)",
-        f"WR: {stats['win_rate']}% ({stats['wins']}W / {stats['losses']}L)",
-        f"P&L: {stats['total_r']:+.2f}R ({stats['total_pnl_usd']:+.2f} USD)",
+        f"WR: {stats['win_rate']}% ({stats['wins']}W / {stats['losses']}L) · "
+        f"expectancy {stats.get('expectancy_r', 0):+.3f}R/trade",
+        f"P&L: {stats['total_r']:+.2f}R ({stats['total_pnl_usd']:+.2f} USD, paper)",
+        *[f"  {({'momentum_v2': 'Momentum', 'mean_reversion_v2': 'Mean reversion'}).get(k, k)}: "
+          f"{v['closed']} closed, {v['win_rate']:.0f}% WR, {v['expectancy_r']:+.3f}R/trade, {v['total_r']:+.2f}R"
+          for k, v in stats.get("by_bot", {}).items()],
         f"Range: {stats['oldest_trade_ts']} → {stats['newest_trade_ts']}",
         f"Signal: {'⚠️ STALE' if stale['stale'] else '✅ fresh'} "
         f"({stale['reason']})",
